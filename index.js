@@ -1,8 +1,13 @@
+const path = require("path");
 const express = require("express");
 const app = express();
 var config = require("./config.json");
+const router = require("./routes");
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", function (req, res) {
   res.render("home");
@@ -32,5 +37,7 @@ Object.keys(config).forEach((key) => {
   });
 });
 
+app.use(router);
+
 app.listen(3201);
-console.log("3201 is the magic port");
+console.log("run at: http://localhost:3201");

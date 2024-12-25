@@ -2,6 +2,7 @@
     <a id="link"></a>
     <p id="error"></p>
     <p id="data"></p>
+    <a target="_blank" id="url">Saved Image URL (60 minutes later will be deleted)</a>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.js"></script>
     <script>
@@ -25,7 +26,7 @@
 
         const button = document.getElementById("download");
         button.style.display = "block";
-        button.textContent = `Download (${expectedType})`;
+        button.textContent = `Create Image (${expectedType})`;
 
         button.addEventListener("click", () => {
           convert[expectedType](wrapper)
@@ -33,6 +34,29 @@
               const data = document.getElementById("data");
               data.style.display = "block";
               data.textContent = dataUrl;
+
+              const url = document.getElementById("url");
+              const time = new Date().getTime();
+              url.style.display = "block";
+
+              fetch("/api/upload", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  dataUrl,
+                  name: `qc-${time}-image`,
+                  type: "<%= type %>",
+                }),
+              })
+                .then((response) => response.json())
+                .then((data) => {
+                  url.href = data.url;
+                })
+                .catch((error) => {
+                  console.error("Could not upload image", error);
+                });
 
               if (<%= download %>) {
                 const link = document.getElementById("link");
