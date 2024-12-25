@@ -15,8 +15,6 @@ Object.keys(config).forEach((key) => {
   };
 
   (config[key].method || []).forEach((method) => {
-    console.log(methodHandlers[method]);
-
     methodHandlers[method](`/${key}`, function (req, res) {
       const dataHandlers = {
         get: req.query,
