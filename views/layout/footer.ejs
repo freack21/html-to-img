@@ -37,7 +37,6 @@
 
               const url = document.getElementById("url");
               const time = new Date().getTime();
-              url.style.display = "block";
 
               fetch("/api/upload", {
                 method: "POST",
@@ -52,6 +51,7 @@
               })
                 .then((response) => response.json())
                 .then((data) => {
+                  url.style.display = "block";
                   url.href = data.url;
                 })
                 .catch((error) => {

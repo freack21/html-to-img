@@ -3,46 +3,53 @@ const path = require("path");
 const interval = 60 * 60 * 1000;
 
 const upload = (req, res) => {
-  const { dataUrl, name, type } = req.body;
-  let data = null;
-  let dataType = "base64";
-  if (type == "png") {
-    data = dataUrl.replace(/^data:image\/png;base64,/, "");
-  } else if (type == "jpg" || type == "jpeg") {
-    data = dataUrl.replace(/^data:image\/jpeg;base64,/, "");
-  } else {
-    return res.status(400).send("Unsupported file type");
-  }
-  const url = `/${name}.${type}`;
-  const folderPath = path.join(__dirname, "../public");
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath);
-  }
-  const filePath = path.join(__dirname, `../public${url}`);
-  fs.writeFileSync(filePath, data, dataType);
+  try {
+    const { dataUrl, name, type } = req.body;
+    let data = null;
+    let dataType = "base64";
+    if (type == "png") {
+      data = dataUrl.replace(/^data:image\/png;base64,/, "");
+    } else if (type == "jpg" || type == "jpeg") {
+      data = dataUrl.replace(/^data:image\/jpeg;base64,/, "");
+    } else {
+      return res.status(400).send("Unsupported file type");
+    }
+    const url = `/${name}.${type}`;
+    const folderPath = path.join(__dirname, "../public");
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath);
+    }
+    const filePath = path.join(__dirname, `../public${url}`);
+    fs.writeFileSync(filePath, data, dataType);
 
-  let removeQueue = [];
-  if (fs.existsSync(path.join(__dirname, "../removeQueue.json"))) {
-    removeQueue = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "../removeQueue.json"))
+    let removeQueue = [];
+    if (fs.existsSync(path.join(__dirname, "../removeQueue.json"))) {
+      removeQueue = JSON.parse(
+        fs.readFileSync(path.join(__dirname, "../removeQueue.json"))
+      );
+    }
+
+    removeQueue.push({
+      url,
+      created_at: new Date().getTime(),
+    });
+
+    fs.writeFileSync(
+      path.join(__dirname, "../removeQueue.json"),
+      JSON.stringify(removeQueue, null, 2)
     );
+
+    res.json({
+      success: true,
+      message: "File uploaded successfully",
+      url,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
-
-  removeQueue.push({
-    url,
-    created_at: new Date().getTime(),
-  });
-
-  fs.writeFileSync(
-    path.join(__dirname, "../removeQueue.json"),
-    JSON.stringify(removeQueue, null, 2)
-  );
-
-  res.json({
-    success: true,
-    message: "File uploaded successfully",
-    url,
-  });
 };
 
 const autoRemoveQueue = () => {
