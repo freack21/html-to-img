@@ -1,0 +1,53 @@
+    <button id="download"></button>
+    <a id="link"></a>
+    <p id="error"></p>
+    <p id="data"></p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const wrapper = document.getElementById("<%= wrapper %>");
+
+        const convert = {
+          png: htmlToImage.toPng,
+          jpeg: htmlToImage.toJpeg,
+          jpg: htmlToImage.toJpeg,
+          svg: htmlToImage.toSvg,
+        }
+
+        const expectedType = "<%= type %>";
+
+        if (!convert[expectedType]) {
+          const errorElement = document.getElementById("error");
+          errorElement.innerHTML = `Invalid Image Type: <strong>${expectedType}</strong>`;
+          return;
+        }
+
+        const button = document.getElementById("download");
+        button.style.display = "block";
+        button.textContent = `Download (${expectedType})`;
+
+        button.addEventListener("click", () => {
+          convert[expectedType](wrapper)
+            .then((dataUrl) => {
+              const data = document.getElementById("data");
+              data.style.display = "block";
+              data.textContent = dataUrl;
+
+              if (<%= download %>) {
+                const link = document.getElementById("link");
+                link.style.display = "block";
+                link.href = dataUrl;
+                const time = new Date().getTime();
+                link.download = `qc-${time}-image.<%= type %>`;
+                link.click();
+              }
+            })
+            .catch((error) => {
+              console.error("Could not generate image", error);
+            });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,73 @@
+<%- include("./layout/header") %>
+
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap");
+
+  * {
+    font-family: "Figtree", sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background-color: transparent;
+  }
+  #wrapper {
+    display: flex;
+    justify-items: center;
+    align-items: start;
+    padding: 8px;
+    max-width: fit-content;
+  }
+  .avatar {
+    width: 128px;
+    border-radius: 50%;
+  }
+  .chat-bubble {
+    margin-left: 24px;
+    padding: 16px 24px;
+    border-radius: 16px;
+    border: none;
+    position: relative;
+    background-color: <%= bgColor %>;
+    /* border-top-left-radius: 0; */
+    min-width: 320px;
+    max-width: 640px;
+  }
+  /* .chat-bubble:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 16px solid transparent;
+    border-right-color: <%= bgColor %>;
+    border-top-color: <%= bgColor %>;
+    border-top-left-radius: 32px;
+    left: auto;
+    right: 100%;
+    top: 0;
+  } */
+  .chat-name {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: orange;
+    font-size: 2.25rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .chat-msg {
+    margin-bottom: 16px;
+    color: <%= textColor %>;
+    font-size: 2.75rem;
+  }
+</style>
+
+<div id="wrapper">
+  <img src="<%= img %>" class="avatar" />
+  <div class="chat-bubble">
+    <p class="chat-name"><%= name %></p>
+    <p class="chat-msg"><%= msg %></p>
+  </div>
+</div>
+
+<%- include("./layout/footer") %>
