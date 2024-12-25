@@ -17,6 +17,10 @@ const upload = (req, res) => {
     return res.status(400).send("Unsupported file type");
   }
   const url = `/${name}.${type}`;
+  const folderPath = path.join(__dirname, "../public");
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath);
+  }
   const filePath = path.join(__dirname, `../public${url}`);
   fs.writeFileSync(filePath, data, dataType);
 
