@@ -1,8 +1,8 @@
-    <button id="download"></button>
-    <a id="link"></a>
+    <button id="create"></button>
+    <a id="download"></a>
     <p id="error"></p>
     <p id="data"></p>
-    <a target="_blank" id="url">Saved Image URL (60 minutes later will be deleted)</a>
+    <a target="_blank" id="link">Saved Image URL (60 minutes later will be deleted)</a>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.js"></script>
     <script>
@@ -24,18 +24,18 @@
           return;
         }
 
-        const button = document.getElementById("download");
-        button.style.display = "block";
-        button.textContent = `Create Image (${expectedType})`;
+        const create = document.getElementById("create");
+        create.style.display = "block";
+        create.textContent = `Create Image (${expectedType})`;
 
-        button.addEventListener("click", () => {
+        create.addEventListener("click", () => {
           convert[expectedType](wrapper)
             .then((dataUrl) => {
               const data = document.getElementById("data");
               data.style.display = "block";
               data.textContent = dataUrl;
 
-              const url = document.getElementById("url");
+              const link = document.getElementById("link");
               const time = new Date().getTime();
 
               fetch("/api/upload", {
@@ -51,20 +51,20 @@
               })
                 .then((response) => response.json())
                 .then((data) => {
-                  url.style.display = "block";
-                  url.href = data.url;
+                  link.style.display = "block";
+                  link.href = data.url;
                 })
                 .catch((error) => {
                   console.error("Could not upload image", error);
                 });
 
               if (<%= download %>) {
-                const link = document.getElementById("link");
-                link.style.display = "block";
-                link.href = dataUrl;
+                const download = document.getElementById("download");
+                download.style.display = "block";
+                download.href = dataUrl;
                 const time = new Date().getTime();
-                link.download = `qc-${time}-image.<%= type %>`;
-                link.click();
+                download.download = `qc-${time}-image.<%= type %>`;
+                download.click();
               }
             })
             .catch((error) => {
