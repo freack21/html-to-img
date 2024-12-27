@@ -7,10 +7,15 @@
     "dev": "nodemon index.js",
     "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "html",
+    "to",
+    "image",
+    "img"
+  ],
+  "author": "Fikri Rivandi",
   "license": "ISC",
-  "description": "",
+  "description": "The project to create an HTML page that the element in it can be used as an image.",
   "dependencies": {
     "ejs": "^3.1.10",
     "express": "^4.21.2"
