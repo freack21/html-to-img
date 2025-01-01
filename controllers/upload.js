@@ -22,21 +22,21 @@ const upload = (req, res) => {
     const filePath = path.join(__dirname, `../public${url}`);
     fs.writeFileSync(filePath, data, dataType);
 
-    let removeQueue = [];
-    if (fs.existsSync(path.join(__dirname, "../removeQueue.json"))) {
-      removeQueue = JSON.parse(
-        fs.readFileSync(path.join(__dirname, "../removeQueue.json"))
+    let uploadQueue = [];
+    if (fs.existsSync(path.join(__dirname, "../uploadQueue.json"))) {
+      uploadQueue = JSON.parse(
+        fs.readFileSync(path.join(__dirname, "../uploadQueue.json"))
       );
     }
 
-    removeQueue.push({
+    uploadQueue.push({
       url,
       created_at: new Date().getTime(),
     });
 
     fs.writeFileSync(
-      path.join(__dirname, "../removeQueue.json"),
-      JSON.stringify(removeQueue, null, 2)
+      path.join(__dirname, "../uploadQueue.json"),
+      JSON.stringify(uploadQueue, null, 2)
     );
 
     res.json({
@@ -52,17 +52,17 @@ const upload = (req, res) => {
   }
 };
 
-const autoRemoveQueue = () => {
-  let removeQueue = [];
+const autouploadQueue = () => {
+  let uploadQueue = [];
 
-  if (fs.existsSync(path.join(__dirname, "../removeQueue.json"))) {
-    removeQueue = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "../removeQueue.json"))
+  if (fs.existsSync(path.join(__dirname, "../uploadQueue.json"))) {
+    uploadQueue = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "../uploadQueue.json"))
     );
   }
 
   const timeNow = new Date().getTime();
-  removeQueue = removeQueue.filter((data) => {
+  uploadQueue = uploadQueue.filter((data) => {
     if (timeNow - data.created_at >= interval) {
       fs.unlinkSync(path.join(__dirname, `../public${data.url}`));
       return false;
@@ -70,14 +70,14 @@ const autoRemoveQueue = () => {
     return true;
   });
   fs.writeFileSync(
-    path.join(__dirname, "../removeQueue.json"),
-    JSON.stringify(removeQueue, null, 2)
+    path.join(__dirname, "../uploadQueue.json"),
+    JSON.stringify(uploadQueue, null, 2)
   );
 };
 
-setInterval(autoRemoveQueue, interval);
+setInterval(autouploadQueue, interval);
 
 module.exports = {
   upload,
-  autoRemoveQueue,
+  autouploadQueue,
 };

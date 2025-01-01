@@ -1,3 +1,5 @@
 node_modules/
+public/
 .prettierrc
 package-lock.json
+uploadQueue.json
