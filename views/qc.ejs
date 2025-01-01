@@ -19,19 +19,20 @@
     max-width: fit-content;
   }
   .avatar {
-    width: 128px;
+    width: 64px;
     border-radius: 50%;
   }
   .chat-bubble {
-    margin-left: 24px;
-    padding: 16px 24px;
+    margin-left: 8px;
+    padding: 12px 16px;
     border-radius: 16px;
     border: none;
     position: relative;
     background-color: <%= bgColor %>;
     /* border-top-left-radius: 0; */
-    min-width: 320px;
-    max-width: 640px;
+    min-width: 240px;
+    max-width: 240px;
+    box-sizing: border-box;
   }
   /* .chat-bubble:after {
     content: "";
@@ -48,17 +49,17 @@
   } */
   .chat-name {
     font-weight: bold;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: orange;
-    font-size: 2.25rem;
+    font-size: 1.75rem;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
   }
   .chat-msg {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     color: <%= textColor %>;
-    font-size: 2.75rem;
+    font-size: 2rem;
   }
 </style>
 
