@@ -32,7 +32,7 @@
     border-radius: 16px;
     border: none;
     position: relative;
-    background-color: <%= bgColor %>;
+    background-color: <%- bgColor %>;
     min-width: 240px;
     max-width: 240px;
     box-sizing: border-box;
@@ -48,7 +48,7 @@
   }
   .chat-msg {
     margin-bottom: 12px;
-    color: <%= textColor %>;
+    color: <%- textColor %>;
     font-size: 2rem;
   }
 </style>
@@ -56,8 +56,8 @@
 <div id="wrapper">
   <div class="avatar"></div>
   <div class="chat-bubble">
-    <p class="chat-name"><%= name %></p>
-    <p class="chat-msg"><%= msg %></p>
+    <p class="chat-name"><%- name %></p>
+    <p class="chat-msg"><%- msg %></p>
   </div>
 </div>
 
