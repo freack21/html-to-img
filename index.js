@@ -1,3 +1,4 @@
+const PORT = 3002;
 const path = require("path");
 const express = require("express");
 const app = express();
@@ -30,6 +31,9 @@ Object.keys(config).forEach((key) => {
       Object.keys(config[key].data || {}).forEach((dataKey) => {
         data[dataKey] =
           dataHandlers[method][dataKey] || config[key].data[dataKey];
+        if ((data[dataKey] || "").startsWith("http")) {
+          data[dataKey] = decodeURIComponent(data[dataKey]);
+        }
       });
 
       res.render(config[key].view || key, data);
@@ -39,5 +43,5 @@ Object.keys(config).forEach((key) => {
 
 app.use(router);
 
-app.listen(3201);
-console.log("run at: http://localhost:3201");
+app.listen(PORT);
+console.log(`run at: http://localhost:${PORT}`);
