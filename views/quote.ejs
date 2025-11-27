@@ -1,0 +1,79 @@
+<%- include("./layout/header") %>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital@1&display=swap');
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #1a1a2e;
+  }
+  #wrapper {
+    width: 500px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    <% if (bgImage) { %>
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('<%- bgImage %>');
+    background-size: cover;
+    background-position: center;
+    <% } else if (theme === 'gradient') { %>
+    background: linear-gradient(135deg, <%= bgColor %> 0%, #764ba2 100%);
+    <% } else { %>
+    background-color: <%= bgColor %>;
+    <% } %>
+  }
+  .quote-mark {
+    font-size: 80px;
+    color: <%= textColor %>;
+    opacity: 0.3;
+    font-family: Georgia, serif;
+    line-height: 1;
+    margin-bottom: -20px;
+  }
+  .quote-text {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: <%= textColor %>;
+    line-height: 1.5;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  }
+  .quote-author {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 18px;
+    font-style: italic;
+    color: <%= textColor %>;
+    opacity: 0.9;
+  }
+  .quote-author::before {
+    content: "— ";
+  }
+  .decorative-line {
+    width: 60px;
+    height: 3px;
+    background-color: <%= textColor %>;
+    margin: 20px auto;
+    opacity: 0.5;
+  }
+</style>
+
+<div id="wrapper">
+  <div class="quote-mark">"</div>
+  <p class="quote-text"><%- quote %></p>
+  <div class="decorative-line"></div>
+  <p class="quote-author"><%- author %></p>
+</div>
+
+<%- include("./layout/footer") %>
+

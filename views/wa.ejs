@@ -1,0 +1,98 @@
+<%- include("./layout/header") %>
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #0b141a;
+  }
+  #wrapper {
+    width: 400px;
+    background-color: #0b141a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .wa-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background-color: #1f2c34;
+  }
+  .wa-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+  }
+  .wa-contact-name {
+    color: #e9edef;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .wa-status {
+    color: #8696a0;
+    font-size: 13px;
+  }
+  .wa-chat {
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='pattern' width='50' height='50' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='25' cy='25' r='1' fill='%23182229'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='%230b141a'/%3E%3Crect width='100' height='100' fill='url(%23pattern)'/%3E%3C/svg%3E");
+    padding: 16px;
+    min-height: 200px;
+  }
+  .wa-bubble {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .wa-bubble-received {
+    background-color: #1f2c34;
+    color: #e9edef;
+    border-top-left-radius: 0;
+  }
+  .wa-bubble-sent {
+    background-color: #005c4b;
+    color: #e9edef;
+    margin-left: auto;
+    border-top-right-radius: 0;
+  }
+  .wa-time {
+    font-size: 11px;
+    color: #8696a0;
+    text-align: right;
+    margin-top: 4px;
+  }
+  .wa-check {
+    color: #53bdeb;
+    margin-left: 4px;
+  }
+</style>
+
+<div id="wrapper">
+  <div class="wa-header">
+    <img class="wa-avatar" src="<%- contactAvatar %>" alt="avatar" crossorigin="anonymous" />
+    <div>
+      <div class="wa-contact-name"><%- contactName %></div>
+      <div class="wa-status">online</div>
+    </div>
+  </div>
+  <div class="wa-chat">
+    <div class="wa-bubble wa-bubble-received">
+      <%- msg1 %>
+      <div class="wa-time"><%- time1 %></div>
+    </div>
+    <div class="wa-bubble wa-bubble-sent">
+      <%- msg2 %>
+      <div class="wa-time"><%- time2 %><span class="wa-check">✓✓</span></div>
+    </div>
+  </div>
+</div>
+
+<%- include("./layout/footer") %>
+

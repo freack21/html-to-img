@@ -13,5 +13,185 @@
     },
     "method": ["get", "post"],
     "view": "qc"
+  },
+  "meme": {
+    "data": {
+      "title": "Meme Generator",
+      "img": "https://i.imgflip.com/30b1gx.jpg",
+      "textTop": "",
+      "textBottom": "",
+      "textCenter": "",
+      "textColor": "white",
+      "strokeColor": "black",
+      "fontSize": "48",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "meme"
+  },
+  "tweet": {
+    "data": {
+      "title": "Tweet Generator",
+      "username": "John Doe",
+      "handle": "johndoe",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=johndoe",
+      "content": "This is a sample tweet! 🚀",
+      "likes": "1.2K",
+      "retweets": "234",
+      "replies": "56",
+      "views": "12.5K",
+      "date": "10:30 AM · Nov 27, 2024",
+      "verified": "true",
+      "theme": "dark",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "tweet"
+  },
+  "quote": {
+    "data": {
+      "title": "Quote Generator",
+      "quote": "The only way to do great work is to love what you do.",
+      "author": "Steve Jobs",
+      "bgImage": "",
+      "bgColor": "#667eea",
+      "textColor": "white",
+      "theme": "gradient",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "quote"
+  },
+  "wa": {
+    "data": {
+      "title": "WhatsApp Chat",
+      "contactName": "John",
+      "contactAvatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
+      "msg1": "Hey, how are you?",
+      "msg2": "I'm good! Thanks for asking 😊",
+      "time1": "10:30",
+      "time2": "10:31",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "wa"
+  },
+  "code": {
+    "data": {
+      "title": "Code Snippet",
+      "code": "console.log('Hello World!');",
+      "language": "javascript",
+      "theme": "dracula",
+      "fileName": "index.js",
+      "showLineNumbers": "true",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "code"
+  },
+  "yt-thumb": {
+    "data": {
+      "title": "YouTube Thumbnail",
+      "text": "AMAZING VIDEO",
+      "subtext": "You won't believe this!",
+      "bgImage": "https://picsum.photos/1280/720",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=yt",
+      "channelName": "My Channel",
+      "emoji": "🔥",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "yt-thumb"
+  },
+  "certificate": {
+    "data": {
+      "title": "Certificate",
+      "recipientName": "John Doe",
+      "achievement": "Excellence in Programming",
+      "date": "November 27, 2024",
+      "issuer": "Tech Academy",
+      "issuerTitle": "Director",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "certificate"
+  },
+  "profile": {
+    "data": {
+      "title": "Profile Card",
+      "name": "John Doe",
+      "bio": "Full-stack Developer | Coffee Lover ☕",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=profile",
+      "followers": "1.2K",
+      "following": "350",
+      "posts": "42",
+      "theme": "dark",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "profile"
+  },
+  "banner": {
+    "data": {
+      "title": "Banner Generator",
+      "headline": "MEGA EVENT 2024",
+      "subheadline": "Join us for an amazing experience!",
+      "date": "December 25, 2024",
+      "location": "Jakarta, Indonesia",
+      "bgColor": "#ff6b6b",
+      "textColor": "white",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "banner"
+  },
+  "spotify": {
+    "data": {
+      "title": "Spotify Now Playing",
+      "songTitle": "Blinding Lights",
+      "artist": "The Weeknd",
+      "album": "After Hours",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36",
+      "progress": "65",
+      "duration": "3:20",
+      "current": "2:10",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "spotify"
+  },
+  "polaroid": {
+    "data": {
+      "title": "Polaroid",
+      "img": "https://picsum.photos/400/400",
+      "caption": "Good vibes only ✨",
+      "date": "Nov 2024",
+      "rotation": "-3",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "polaroid"
   }
 }

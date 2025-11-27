@@ -1,0 +1,153 @@
+<%- include("./layout/header") %>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Circular+Std:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #121212;
+  }
+  #wrapper {
+    width: 400px;
+    padding: 24px;
+    background: linear-gradient(180deg, #1a1a1a 0%, #121212 100%);
+    border-radius: 16px;
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+  .spotify-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .spotify-logo {
+    width: 24px;
+    height: 24px;
+    background-color: #1db954;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .spotify-label {
+    color: #1db954;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .spotify-content {
+    display: flex;
+    gap: 20px;
+  }
+  .album-art {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .song-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .song-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .song-artist {
+    font-size: 14px;
+    color: #b3b3b3;
+    margin-bottom: 4px;
+  }
+  .song-album {
+    font-size: 12px;
+    color: #6a6a6a;
+  }
+  .progress-container {
+    margin-top: 20px;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background-color: #4d4d4d;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: <%= progress %>%;
+    background-color: #1db954;
+    border-radius: 2px;
+  }
+  .progress-time {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #6a6a6a;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    margin-top: 20px;
+  }
+  .control-btn {
+    color: #b3b3b3;
+    font-size: 20px;
+  }
+  .play-btn {
+    width: 40px;
+    height: 40px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #000000;
+  }
+</style>
+
+<div id="wrapper">
+  <div class="spotify-header">
+    <div class="spotify-logo">♫</div>
+    <span class="spotify-label">Now Playing</span>
+  </div>
+  <div class="spotify-content">
+    <img class="album-art" src="<%- albumArt %>" alt="album" crossorigin="anonymous" />
+    <div class="song-info">
+      <div class="song-title"><%- songTitle %></div>
+      <div class="song-artist"><%- artist %></div>
+      <div class="song-album"><%- album %></div>
+    </div>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+    <div class="progress-time">
+      <span><%- current %></span>
+      <span><%- duration %></span>
+    </div>
+  </div>
+  <div class="controls">
+    <span class="control-btn">⏮</span>
+    <div class="play-btn">▶</div>
+    <span class="control-btn">⏭</span>
+  </div>
+</div>
+
+<%- include("./layout/footer") %>
+

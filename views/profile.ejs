@@ -1,0 +1,101 @@
+<%- include("./layout/header") %>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #1a1a2e;
+  }
+  #wrapper {
+    width: 400px;
+    padding: 32px;
+    background: <%= theme === 'dark' ? 'linear-gradient(145deg, #1e1e2e 0%, #2d2d44 100%)' : 'linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%)' %>;
+    border-radius: 24px;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    border: 4px solid <%= theme === 'dark' ? '#667eea' : '#4f46e5' %>;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  }
+  .profile-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: <%= theme === 'dark' ? '#ffffff' : '#1f2937' %>;
+    margin-bottom: 8px;
+  }
+  .profile-bio {
+    font-size: 14px;
+    color: <%= theme === 'dark' ? '#a1a1aa' : '#6b7280' %>;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 20px 0;
+    border-top: 1px solid <%= theme === 'dark' ? '#3f3f5a' : '#e5e7eb' %>;
+    border-bottom: 1px solid <%= theme === 'dark' ? '#3f3f5a' : '#e5e7eb' %>;
+    margin-bottom: 24px;
+  }
+  .stat-item {
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: <%= theme === 'dark' ? '#ffffff' : '#1f2937' %>;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: <%= theme === 'dark' ? '#71717a' : '#9ca3af' %>;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .profile-btn {
+    display: inline-block;
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 25px;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+</style>
+
+<div id="wrapper">
+  <img class="profile-avatar" src="<%- avatar %>" alt="avatar" crossorigin="anonymous" />
+  <h1 class="profile-name"><%- name %></h1>
+  <p class="profile-bio"><%- bio %></p>
+  <div class="profile-stats">
+    <div class="stat-item">
+      <div class="stat-value"><%- posts %></div>
+      <div class="stat-label">Posts</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value"><%- followers %></div>
+      <div class="stat-label">Followers</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value"><%- following %></div>
+      <div class="stat-label">Following</div>
+    </div>
+  </div>
+  <a class="profile-btn">Follow</a>
+</div>
+
+<%- include("./layout/footer") %>
+

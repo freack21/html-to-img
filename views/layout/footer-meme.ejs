@@ -1,0 +1,81 @@
+    <button id="create"></button>
+    <a id="download"></a>
+    <p id="error"></p>
+    <p id="data"></p>
+    <a target="_blank" id="link">Saved Image URL (60 minutes later will be deleted)</a>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const wrapper = document.getElementById("<%= wrapper %>");
+
+        const convert = {
+          png: htmlToImage.toPng,
+          jpeg: htmlToImage.toJpeg,
+          jpg: htmlToImage.toJpeg,
+          svg: htmlToImage.toSvg,
+        }
+
+        const expectedType = "<%= type %>";
+
+        if (!convert[expectedType]) {
+          const errorElement = document.getElementById("error");
+          errorElement.innerHTML = `Invalid Image Type: <strong>${expectedType}</strong>`;
+          return;
+        }
+
+        const create = document.getElementById("create");
+        create.style.display = "block";
+        create.textContent = `Create Meme (${expectedType})`;
+
+        create.addEventListener("click", () => {
+          convert[expectedType](wrapper, {
+            quality: 1,
+            pixelRatio: 2
+          })
+            .then((dataUrl) => {
+              const data = document.getElementById("data");
+              data.style.display = "block";
+              data.textContent = dataUrl;
+
+              const link = document.getElementById("link");
+              const time = new Date().getTime();
+
+              fetch("/api/upload", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  dataUrl,
+                  name: `meme-${time}-image`,
+                  type: "<%= type %>",
+                }),
+              })
+                .then((response) => response.json())
+                .then((data) => {
+                  link.style.display = "block";
+                  link.href = data.url;
+                })
+                .catch((error) => {
+                  console.error("Could not upload image", error);
+                });
+
+              if (<%= download %>) {
+                const download = document.getElementById("download");
+                download.style.display = "block";
+                download.href = dataUrl;
+                const time = new Date().getTime();
+                download.download = `meme-${time}-image.<%= type %>`;
+                download.click();
+              }
+            })
+            .catch((error) => {
+              console.error("Could not generate image", error);
+            });
+        });
+      });
+    </script>
+  </body>
+</html>
+

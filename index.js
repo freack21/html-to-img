@@ -5,8 +5,8 @@ const app = express();
 var config = require("./config.json");
 const router = require("./routes");
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
 

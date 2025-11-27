@@ -1,0 +1,133 @@
+<%- include("./layout/header") %>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #1a1a2e;
+  }
+  #wrapper {
+    width: 600px;
+    height: 300px;
+    background-color: <%= bgColor %>;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px;
+  }
+  .banner-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .banner-shapes {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+  .shape {
+    position: absolute;
+    background-color: rgba(255,255,255,0.1);
+  }
+  .shape-1 {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    top: -50px;
+    right: -30px;
+  }
+  .shape-2 {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    bottom: -30px;
+    left: -20px;
+  }
+  .shape-3 {
+    width: 60px;
+    height: 60px;
+    transform: rotate(45deg);
+    top: 30%;
+    left: 10%;
+  }
+  .banner-headline {
+    font-size: 42px;
+    font-weight: 800;
+    color: <%= textColor %>;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    position: relative;
+    z-index: 1;
+  }
+  .banner-subheadline {
+    font-size: 18px;
+    font-weight: 400;
+    color: <%= textColor %>;
+    opacity: 0.9;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .banner-info {
+    display: flex;
+    gap: 24px;
+    position: relative;
+    z-index: 1;
+  }
+  .banner-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: <%= textColor %>;
+    font-size: 14px;
+    background-color: rgba(255,255,255,0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+  }
+  .banner-icon {
+    font-size: 16px;
+  }
+</style>
+
+<div id="wrapper">
+  <div class="banner-pattern"></div>
+  <div class="banner-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <h1 class="banner-headline"><%- headline %></h1>
+  <p class="banner-subheadline"><%- subheadline %></p>
+  <div class="banner-info">
+    <div class="banner-info-item">
+      <span class="banner-icon">📅</span>
+      <span><%- date %></span>
+    </div>
+    <div class="banner-info-item">
+      <span class="banner-icon">📍</span>
+      <span><%- location %></span>
+    </div>
+  </div>
+</div>
+
+<%- include("./layout/footer") %>
+

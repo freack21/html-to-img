@@ -1,0 +1,92 @@
+<%- include("./layout/header") %>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px;
+  }
+  #wrapper {
+    background-color: #282a36;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    min-width: 450px;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #21222c;
+    gap: 8px;
+  }
+  .window-btn {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .btn-close { background-color: #ff5f56; }
+  .btn-minimize { background-color: #ffbd2e; }
+  .btn-maximize { background-color: #27ca40; }
+  .file-name {
+    color: #6272a4;
+    font-size: 13px;
+    margin-left: 12px;
+    font-family: 'Fira Code', monospace;
+  }
+  .code-content {
+    padding: 20px;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+  .code-line {
+    display: flex;
+  }
+  .line-number {
+    color: #6272a4;
+    min-width: 40px;
+    text-align: right;
+    padding-right: 16px;
+    user-select: none;
+  }
+  .line-code {
+    color: #f8f8f2;
+  }
+  /* Syntax highlighting */
+  .keyword { color: #ff79c6; }
+  .string { color: #f1fa8c; }
+  .function { color: #50fa7b; }
+  .comment { color: #6272a4; font-style: italic; }
+  .variable { color: #bd93f9; }
+</style>
+
+<div id="wrapper">
+  <div class="code-header">
+    <div class="window-btn btn-close"></div>
+    <div class="window-btn btn-minimize"></div>
+    <div class="window-btn btn-maximize"></div>
+    <span class="file-name"><%- fileName %></span>
+  </div>
+  <div class="code-content">
+    <% const lines = code.split('\\n'); %>
+    <% lines.forEach((line, index) => { %>
+      <div class="code-line">
+        <% if (showLineNumbers === 'true') { %>
+          <span class="line-number"><%= index + 1 %></span>
+        <% } %>
+        <span class="line-code"><%= line %></span>
+      </div>
+    <% }); %>
+  </div>
+</div>
+
+<%- include("./layout/footer") %>
+

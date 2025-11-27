@@ -1,0 +1,127 @@
+<%- include("./layout/header") %>
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background-color: <%= theme === 'dark' ? '#000' : '#fff' %>;
+  }
+  #wrapper {
+    width: 500px;
+    padding: 16px;
+    background-color: <%= theme === 'dark' ? '#000' : '#fff' %>;
+    border: 1px solid <%= theme === 'dark' ? '#2f3336' : '#e1e8ed' %>;
+    border-radius: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .tweet-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-right: 12px;
+    background-color: #1da1f2;
+  }
+  .user-info {
+    flex: 1;
+  }
+  .user-name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
+    font-size: 15px;
+    color: <%= theme === 'dark' ? '#e7e9ea' : '#0f1419' %>;
+  }
+  .verified-badge {
+    width: 18px;
+    height: 18px;
+    background-color: #1da1f2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+  }
+  .user-handle {
+    color: <%= theme === 'dark' ? '#71767b' : '#536471' %>;
+    font-size: 15px;
+  }
+  .tweet-content {
+    font-size: 17px;
+    line-height: 1.5;
+    color: <%= theme === 'dark' ? '#e7e9ea' : '#0f1419' %>;
+    margin-bottom: 12px;
+    word-wrap: break-word;
+  }
+  .tweet-date {
+    color: <%= theme === 'dark' ? '#71767b' : '#536471' %>;
+    font-size: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid <%= theme === 'dark' ? '#2f3336' : '#e1e8ed' %>;
+  }
+  .tweet-stats {
+    display: flex;
+    gap: 24px;
+    padding-top: 12px;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: <%= theme === 'dark' ? '#71767b' : '#536471' %>;
+    font-size: 14px;
+  }
+  .stat-icon {
+    font-size: 18px;
+  }
+  .stat-value {
+    font-weight: 500;
+  }
+</style>
+
+<div id="wrapper">
+  <div class="tweet-header">
+    <img class="avatar" src="<%- avatar %>" alt="avatar" crossorigin="anonymous" />
+    <div class="user-info">
+      <div class="user-name">
+        <%- username %>
+        <% if (verified === 'true') { %>
+          <span class="verified-badge">✓</span>
+        <% } %>
+      </div>
+      <div class="user-handle">@<%- handle %></div>
+    </div>
+  </div>
+  <div class="tweet-content"><%- content %></div>
+  <div class="tweet-date"><%- date %></div>
+  <div class="tweet-stats">
+    <div class="stat">
+      <span class="stat-icon">💬</span>
+      <span class="stat-value"><%- replies %></span>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">🔄</span>
+      <span class="stat-value"><%- retweets %></span>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">❤️</span>
+      <span class="stat-value"><%- likes %></span>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">📊</span>
+      <span class="stat-value"><%- views %></span>
+    </div>
+  </div>
+</div>
+
+<%- include("./layout/footer") %>
+
