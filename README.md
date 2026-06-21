@@ -63,3 +63,38 @@ The `config.json` contains several configuration, such as:
 ```
 
 The `path` is user-defined, so you can make your own HTML to image page!
+
+## ⚡ Server-Side Image Generation API
+
+We support generating images directly from the server-side using a headless browser without any manual click from the frontend.
+
+### Endpoint: `/api/generate` (GET & POST)
+
+By default, this endpoint returns the binary image file directly (`image/png` or `image/jpeg`).
+
+#### Parameters:
+- `template` (string, required): The template key to render (e.g. `tweet`, `meme`, `wa`, `code`, etc.)
+- `json` (boolean, optional): Set to `true` to return a JSON response containing the saved image URL instead of streaming the binary image.
+- Any other template-specific variables (e.g. `username`, `content`, `textTop`, `textBottom`, `img`, etc.)
+
+#### Examples:
+
+**Direct Image (GET)**:
+```http
+GET /api/generate?template=tweet&username=John&content=Hello%20World!
+```
+
+**JSON Response (POST)**:
+```http
+POST /api/generate
+Content-Type: application/json
+
+{
+  "template": "meme",
+  "img": "https://i.imgflip.com/30b1gx.jpg",
+  "textTop": "WHEN CODE WORKS",
+  "textBottom": "FIRST TRY",
+  "json": true
+}
+```
+
