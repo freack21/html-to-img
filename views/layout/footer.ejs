@@ -45,7 +45,7 @@
                 },
                 body: JSON.stringify({
                   dataUrl,
-                  name: `qc-${time}-image`,
+                  name: `hti-${time}-image`,
                   type: "<%= type %>",
                 }),
               })
@@ -63,7 +63,7 @@
                 download.style.display = "block";
                 download.href = dataUrl;
                 const time = new Date().getTime();
-                download.download = `qc-${time}-image.<%= type %>`;
+                download.download = `hti-${time}-image.<%= type %>`;
                 download.click();
               }
             })

@@ -193,5 +193,20 @@
     },
     "method": ["get", "post"],
     "view": "polaroid"
+  },
+  "ig-feed": {
+    "data": {
+      "title": "Feed Instagram",
+      "img": "https://picsum.photos/1080/1080",
+      "avatar": "https://picsum.photos/128/128",
+      "caption": "Good vibes only ✨",
+      "date": "Nov 2024",
+      "rotation": "-3",
+      "wrapper": "wrapper",
+      "type": "png",
+      "download": false
+    },
+    "method": ["get", "post"],
+    "view": "ig-feed"
   }
 }
