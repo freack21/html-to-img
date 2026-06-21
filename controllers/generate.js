@@ -152,6 +152,7 @@ const generate = async (req, res) => {
         url
       });
     } else {
+      res.setHeader("Content-Disposition", `inline; filename="hti-${timeNow}.${type}"`);
       return res.sendFile(filePath);
     }
   } catch (error) {

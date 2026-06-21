@@ -3,53 +3,483 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home | html-to-img</title>
+    <title>Dashboard | html-to-img</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap");
+      :root {
+        --bg-color: #0b0f19;
+        --card-bg: rgba(255, 255, 255, 0.03);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --text-primary: #f3f4f6;
+        --text-secondary: #9ca3af;
+        --primary-glow: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+        --accent-glow: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+      }
 
       * {
-        font-family: "Figtree", sans-serif;
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
+        font-family: 'Plus Jakarta Sans', sans-serif;
       }
+
       body {
-        display: flex;
-        justify-content: center;
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        min-height: 100vh;
+        overflow-x: hidden;
+        position: relative;
+        padding: 48px 24px;
+      }
+
+      /* Glow background elements */
+      body::before {
+        content: "";
+        position: absolute;
+        width: 350px;
+        height: 350px;
+        background: #3b82f6;
+        filter: blur(150px);
+        opacity: 0.15;
+        top: 10%;
+        left: 5%;
+        z-index: -1;
+      }
+
+      body::after {
+        content: "";
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        background: #8b5cf6;
+        filter: blur(160px);
+        opacity: 0.15;
+        bottom: 10%;
+        right: 5%;
+        z-index: -1;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        z-index: 1;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+
+      .badge {
+        display: inline-flex;
         align-items: center;
-        flex-direction: column;
-        height: 100vh;
+        gap: 6px;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        padding: 6px 16px;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 16px;
       }
-      .wrapper {
-        background-color: #e9ecef;
-        max-width: 640px;
-        padding: 32px;
+
+      .badge-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #10b981;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #10b981;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      }
+
+      h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      header p {
+        color: var(--text-secondary);
+        font-size: 1.15rem;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+      }
+
+      /* Grid layout */
+      .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 32px;
+      }
+
+      /* Card styles */
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        padding: 28px;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         display: flex;
-        justify-content: center;
-        align-items: center;
         flex-direction: column;
-        gap: 8px;
-        border-radius: 16px;
+        justify-content: space-between;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
       }
-      hr {
-        width: 100%;
-        border: 1px solid black;
-        margin: 4px 0;
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--primary-glow);
+        opacity: 0;
+        transition: opacity 0.3s ease;
       }
-      .footer {
+
+      .card:hover {
+        transform: translateY(-6px);
+        border-color: rgba(99, 102, 241, 0.4);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.1);
+      }
+
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .card-title-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .card-icon {
+        font-size: 1.75rem;
+      }
+
+      .card-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .card-badge {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #a5b4fc;
+        padding: 4px 10px;
+        border-radius: 6px;
         font-size: 0.75rem;
-        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      /* Parameter table */
+      .param-section {
+        margin-bottom: 24px;
+        flex-grow: 1;
+      }
+
+      .param-section-title {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .table-wrapper {
+        max-height: 180px;
+        overflow-y: auto;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      /* Custom scrollbar */
+      .table-wrapper::-webkit-scrollbar {
+        width: 6px;
+      }
+      .table-wrapper::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .table-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 99px;
+      }
+      .table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.8rem;
+      }
+
+      th, td {
+        padding: 8px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      th {
+        color: var(--text-secondary);
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      td.param-name {
+        font-family: monospace;
+        color: #818cf8;
+        font-weight: 500;
+      }
+
+      td.param-val {
+        color: #d1d5db;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* Action buttons */
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: auto;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 12px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        flex: 1;
+      }
+
+      .btn-primary {
+        background: var(--primary-glow);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        opacity: 0.95;
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      /* Toast Notification */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #10b981;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+        transform: translateY(150%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 999;
+      }
+
+      .toast.show {
+        transform: translateY(0);
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 80px;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 24px;
+      }
+
+      footer a {
+        color: #818cf8;
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        h1 { font-size: 2.25rem; }
+        body { padding: 32px 16px; }
+        .templates-grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
   <body>
-    <div class="wrapper">
-      <h3>Welcome to the html-to-img!</h3>
-      <hr />
-      <p class="footer">
-        Made with ✨ by
-        <a target="_blank" href="https://github.com/freack21">freack21</a>
-      </p>
+    <%
+      const templateMeta = {
+        qc: { title: "Quick Chat", icon: "💬" },
+        meme: { title: "Meme Generator", icon: "🎭" },
+        tweet: { title: "Tweet / X Post", icon: "🐦" },
+        quote: { title: "Quote Generator", icon: "✍️" },
+        wa: { title: "WhatsApp Chat", icon: "🟢" },
+        code: { title: "Code Snippet", icon: "💻" },
+        "yt-thumb": { title: "YouTube Thumbnail", icon: "📺" },
+        certificate: { title: "Certificate", icon: "📜" },
+        profile: { title: "Profile Card", icon: "🪪" },
+        banner: { title: "Banner / Announcement", icon: "📢" },
+        spotify: { title: "Spotify Now Playing", icon: "🎵" },
+        polaroid: { title: "Polaroid", icon: "📸" },
+        "ig-feed": { title: "Feed Instagram", icon: "📸" }
+      };
+    %>
+
+    <div class="container">
+      <header>
+        <div class="badge">
+          <div class="badge-dot"></div>
+          <span>HTML-to-Image API Online</span>
+        </div>
+        <h1>HTML-to-Image Dashboard</h1>
+        <p>Buka dan kelola API pembuatan gambar dinamis secara langsung dari server-side rendering menggunakan layout template CSS/HTML Anda.</p>
+      </header>
+
+      <div class="templates-grid">
+        <% Object.keys(config).forEach((key) => { %>
+          <% 
+            const meta = templateMeta[key] || { title: key, icon: "✨" };
+            const defaultType = config[key].data.type || "png";
+            
+            // Build example link using default data
+            const exampleParams = new URLSearchParams();
+            exampleParams.set('template', key);
+            Object.keys(config[key].data).forEach(dataKey => {
+              if (dataKey !== 'wrapper' && dataKey !== 'download' && dataKey !== 'type') {
+                exampleParams.set(dataKey, config[key].data[dataKey]);
+              }
+            });
+            const exampleUrl = `/api/generate?${exampleParams.toString()}`;
+          %>
+          <div class="card">
+            <div>
+              <div class="card-header">
+                <div class="card-title-group">
+                  <span class="card-icon"><%= meta.icon %></span>
+                  <span class="card-title"><%= meta.title %></span>
+                </div>
+                <span class="card-badge"><%= defaultType %></span>
+              </div>
+
+              <div class="param-section">
+                <div class="param-section-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  Arguments / Parameters
+                </div>
+                <div class="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Param</th>
+                        <th>Default</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% Object.keys(config[key].data).forEach(dataKey => { %>
+                        <% if (dataKey !== 'wrapper') { %>
+                          <tr>
+                            <td class="param-name"><%= dataKey %></td>
+                            <td class="param-val" title="<%= config[key].data[dataKey] %>"><%= config[key].data[dataKey] %></td>
+                          </tr>
+                        <% } %>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <a href="<%= exampleUrl %>" target="_blank" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polygon><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                Try Live API
+              </a>
+              <button onclick="copyToClipboard(window.location.origin + '<%= exampleUrl %>')" class="btn btn-secondary" title="Salin URL API">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Copy URL
+              </button>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+
+      <footer>
+        <p>Made with ✨ by <a target="_blank" href="https://github.com/freack21">freack21</a></p>
+      </footer>
     </div>
+
+    <div class="toast" id="toast">URL API berhasil disalin ke clipboard!</div>
+
+    <script>
+      function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+          const toast = document.getElementById("toast");
+          toast.classList.add("show");
+          setTimeout(() => {
+            toast.classList.remove("show");
+          }, 2500);
+        }).catch(err => {
+          console.error('Gagal menyalin: ', err);
+        });
+      }
+    </script>
   </body>
 </html>
