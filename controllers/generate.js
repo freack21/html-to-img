@@ -69,6 +69,8 @@ const generate = async (req, res) => {
     Object.keys(params).forEach(key => {
       searchParams.set(key, params[key]);
     });
+    // Force transparent background for screenshotting
+    searchParams.set("transparent", "true");
 
     const port = process.env.PORT || 3003;
     const targetUrl = `http://localhost:${port}/${template}?${searchParams.toString()}`;
@@ -123,6 +125,7 @@ const generate = async (req, res) => {
     await element.screenshot({
       path: filePath,
       type: ssType,
+      omitBackground: true,
       quality: ssType === "jpeg" ? 100 : undefined
     });
 

@@ -1,111 +1,251 @@
 <%- include("./layout/header") %>
 
 <style>
-  @import url("https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&display=swap");
-  @import url("https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap");
-
   * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    border: none;
   }
+
   body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+    background: <%= typeof transparent !== 'undefined' && transparent === 'true' ? 'transparent' : '#121212' %>;
+  }
+
+  #wrapper {
+    width: 1080px;
+    height: 1080px;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 40px;
-  }
-  #wrapper {
-    width: 1080px;
-    aspect-ratio: 1 / 1;
-    background-color: #fff;
+    background: <%= typeof transparent !== 'undefined' && transparent === 'true' ? 'transparent' : 'radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%)' %>;
     position: relative;
-    background: url("<%- img %>");
-    background-size: cover;
-    background-position: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
-  .content {
-    width: 75%;
-    height: 75%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    position: absolute;
+
+  .instagram-card {
+    width: 600px;
+    background: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#000000' : '#ffffff' %>;
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
-    gap: 0;
-    font-family: "Figtree", sans-serif;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
     overflow: hidden;
-    border: none;
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#f5f5f5' : '#262626' %>;
+    border: 1px solid <%= typeof theme !== 'undefined' && theme === 'dark' ? '#262626' : '#dbdbdb' %>;
+    transform: rotate(<%= typeof rotation !== 'undefined' ? rotation : '0' %>deg);
+    transition: transform 0.3s ease;
+  }
+
+  /* Header */
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid <%= typeof theme !== 'undefined' && theme === 'dark' ? '#262626' : '#efefef' %>;
+  }
+
+  .user-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar-container {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 2.5px;
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .avatar {
-    width: 64px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid <%= typeof theme !== 'undefined' && theme === 'dark' ? '#000000' : '#ffffff' %>;
+  }
+
+  .user-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .username {
+    font-size: 14px;
+    font-weight: 600;
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#f5f5f5' : '#262626' %>;
+  }
+
+  .location {
+    font-size: 11.5px;
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#a8a8a8' : '#737373' %>;
+    margin-top: 1px;
+  }
+
+  .options-btn {
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#a8a8a8' : '#737373' %>;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Main Post Image */
+  .post-image-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#121212' : '#fafafa' %>;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .post-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Interaction Area */
+  .interaction-area {
+    padding: 12px 16px 16px;
+  }
+
+  .action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .left-actions {
+    display: flex;
+    gap: 16px;
+  }
+
+  .icon-btn {
+    cursor: pointer;
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#f5f5f5' : '#262626' %>;
+    display: flex;
+    align-items: center;
+  }
+
+  .heart-icon {
+    color: #ff3040;
+  }
+
+  /* Text details */
+  .likes-count {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#f5f5f5' : '#262626' %>;
+  }
+
+  .caption-section {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 6px;
+    word-wrap: break-word;
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#f5f5f5' : '#262626' %>;
+  }
+
+  .caption-username {
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  .comments-link {
+    font-size: 13.5px;
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#a8a8a8' : '#737373' %>;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+
+  .post-date {
+    font-size: 10.5px;
+    color: <%= typeof theme !== 'undefined' && theme === 'dark' ? '#a8a8a8' : '#737373' %>;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    margin-top: 4px;
   }
 </style>
 
 <div id="wrapper">
-  <div class="content">
-    <!-- Header -->
-    <div
-      style="
-        background: #fff;
-        padding: 16px 32px;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        box-shadow: none;
-      "
-    >
-      <img src="<%- avatar %>" alt="avatar" class="avatar" />
-      <p
-        style="
-          margin-left: 16px;
-          color: #333;
-          font-weight: 600;
-          font-size: 28px;
-        "
-      >
-        @fkrvndii
-      </p>
+  <div id="instagram-card" class="instagram-card">
+    <!-- Card Header -->
+    <div class="card-header">
+      <div class="user-section">
+        <div class="avatar-container">
+          <img class="avatar" src="<%- avatar %>" alt="avatar" />
+        </div>
+        <div class="user-info">
+          <span class="username"><%- username %></span>
+          <% if (typeof location !== 'undefined' && location) { %>
+            <span class="location"><%- location %></span>
+          <% } %>
+        </div>
+      </div>
+      <div class="options-btn">
+        <svg aria-label="More options" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+          <circle cx="12" cy="12" r="1.5"></circle>
+          <circle cx="6" cy="12" r="1.5"></circle>
+          <circle cx="18" cy="12" r="1.5"></circle>
+        </svg>
+      </div>
     </div>
 
-    <!-- Middle content area -->
-    <div
-      style="
-        flex-grow: 1;
-        background: transparent;
-        border-color: #fff;
-        border-left: 32px solid #fff;
-        border-right: 32px solid #fff;
-        box-shadow: none;
-      "
-    ></div>
+    <!-- Main Image -->
+    <div class="post-image-container">
+      <img class="post-image" src="<%- img %>" alt="post content" />
+    </div>
 
-    <!-- Footer -->
-    <div
-      style="
-        background: #fff;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        padding: 32px;
-        padding-top: 16px;
-        font-size: 24px;
-        border-color: #fff;
-        box-shadow: none;
-      "
-    >
-      <p>do you think i have forgotten?</p>
+    <!-- Interaction & Content Area -->
+    <div class="interaction-area">
+      <div class="action-bar">
+        <div class="left-actions">
+          <span class="icon-btn heart-icon">
+            <svg aria-label="Like" fill="currentColor" height="24" viewBox="0 0 48 48" width="24">
+              <path d="M34.6 3.1c-4.5 0-7.9 1.8-10.6 5.6-2.7-3.7-6.1-5.6-10.6-5.6C6.6 3.1 1.5 8.2 1.5 15.1c0 9.5 8.5 16.1 20.7 27.2 1.2 1.1 2.9 1.1 4.1 0 12.2-11.1 20.7-17.7 20.7-27.2 0-6.9-5.1-12-11.9-12z"></path>
+            </svg>
+          </span>
+          <span class="icon-btn">
+            <svg aria-label="Comment" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="3" height="24" viewBox="0 0 24 24" width="24">
+              <path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22z"></path>
+            </svg>
+          </span>
+          <span class="icon-btn">
+            <svg aria-label="Share Post" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" height="24" viewBox="0 0 24 24" width="24">
+              <line x1="22" x2="9.218" y1="3" y2="10.083"></line>
+              <polygon points="11.698 20.334 22 3.001 2 3.001 11.698 20.334"></polygon>
+            </svg>
+          </span>
+        </div>
+        <span class="icon-btn">
+          <svg aria-label="Save" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" height="24" viewBox="0 0 24 24" width="24">
+            <polygon points="20 21 12 13.44 4 21 4 3 20 3 20 21"></polygon>
+          </svg>
+        </span>
+      </div>
+
+      <!-- Likes count -->
+      <% if (typeof likes !== 'undefined' && likes) { %>
+        <div class="likes-count"><%- likes %> likes</div>
+      <% } %>
+
+      <!-- Caption -->
+      <div class="caption-section">
+        <span class="caption-username"><%- username %></span><%- caption %>
+      </div>
+
+      <!-- Fake Comments link -->
+      <div class="comments-link">View all comments</div>
+
+      <!-- Date -->
+      <div class="post-date"><%- date %></div>
     </div>
   </div>
 </div>
