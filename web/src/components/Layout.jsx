@@ -95,7 +95,12 @@ export default function Layout() {
         html-to-img · made by{" "}
         <a href="https://github.com/freack21" className="underline hover:text-zinc-700 dark:hover:text-zinc-300">
           freack21
-        </a>
+        </a>{" "}
+        · emoji by{" "}
+        <a href="https://github.com/jdecked/twemoji" className="underline hover:text-zinc-700 dark:hover:text-zinc-300">
+          Twemoji
+        </a>{" "}
+        (CC-BY 4.0)
       </footer>
     </div>
   );
