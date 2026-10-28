@@ -3,6 +3,7 @@
   "name": "YouTube Thumbnail",
   "description": "1280×720 video thumbnail with bold headline and channel badge.",
   "category": "social",
+  "isPremium": true,
   "definition": {
     "width": 1280,
     "height": 720,

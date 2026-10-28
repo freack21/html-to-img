@@ -3,6 +3,7 @@
   "name": "Certificate",
   "description": "Landscape certificate of achievement with signature line.",
   "category": "business",
+  "isPremium": true,
   "definition": {
     "width": 1200,
     "height": 850,
