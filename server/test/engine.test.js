@@ -8,6 +8,7 @@ import { buildElement, evaluateCondition, resolveValue } from "../src/engine/bui
 import { emojiCode } from "../src/engine/emoji.js";
 import { createImageLoader, isBlockedAddress, sniffImage } from "../src/engine/images.js";
 import { resolveParams } from "../src/engine/params.js";
+import { clientKey } from "../src/lib/client.js";
 
 const TEMPLATES_DIR = path.join(import.meta.dirname, "../templates");
 const PNG_1PX = Buffer.from(
@@ -187,4 +188,13 @@ test("emoji code points follow Twemoji naming", () => {
   assert.equal(emojiCode("🚀"), "1f680");
   assert.equal(emojiCode("❤️"), "2764");
   assert.equal(emojiCode("👨‍💻"), "1f468-200d-1f4bb");
+});
+
+test("client keys group IPv6 clients by /64", () => {
+  assert.equal(clientKey("203.0.113.9"), "203.0.113.9");
+  assert.equal(clientKey("::ffff:203.0.113.9"), "203.0.113.9");
+  assert.equal(clientKey("2001:db8:1:2:aaaa::1"), "2001:db8:1:2::/64");
+  assert.equal(clientKey("2001:db8:1:2:bbbb:cccc:dddd:eeee"), "2001:db8:1:2::/64");
+  assert.equal(clientKey("2001:db8::1"), "2001:db8:0:0::/64");
+  assert.equal(clientKey("::1"), "0:0:0:0::/64");
 });

@@ -75,7 +75,8 @@ export async function verifyCredentials(db, input) {
   return toUser(row);
 }
 
-export async function changePassword(db, userId, input) {
+/** Changes the password and signs out every other session of the user. */
+export async function changePassword(db, userId, input, { keepToken } = {}) {
   const data = parse(passwordChangeSchema, input);
   const row = db.prepare("SELECT password_hash FROM users WHERE id = ?").get(userId);
   if (!(await verifyPassword(data.currentPassword, row.password_hash))) {
@@ -83,6 +84,7 @@ export async function changePassword(db, userId, input) {
   }
   const hash = await hashPassword(data.newPassword);
   db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hash, userId);
+  db.prepare("DELETE FROM sessions WHERE user_id = ? AND token_hash != ?").run(userId, keepToken ? sha256(keepToken) : "");
 }
 
 export function setPassword(db, userId, hash) {

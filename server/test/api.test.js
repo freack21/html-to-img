@@ -123,6 +123,11 @@ describe("guest rendering", () => {
   });
 });
 
+test("a malformed session cookie is ignored", async () => {
+  const res = await client(ctx.base).get("/api/v1/templates", { headers: { cookie: "hti_session=%" } });
+  assert.equal(res.status, 200);
+});
+
 describe("accounts", () => {
   const user = { email: "user@example.com", password: "correct horse battery", name: "User" };
   let api;
@@ -186,6 +191,14 @@ describe("accounts", () => {
     assert.equal(res.data.error.code, "bad_origin");
   });
 
+  test("cross-site GET renders do not spend the user's quota", async () => {
+    const before = (await api.get("/api/v1/auth/me")).data.data.usage.used;
+    const res = await api.get("/api/v1/render?template=qc", { headers: { "sec-fetch-site": "cross-site" } });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("x-quota-limit"), "10", "counted as a guest render");
+    assert.equal((await api.get("/api/v1/auth/me")).data.data.usage.used, before);
+  });
+
   test("non-admins cannot use admin routes", async () => {
     assert.equal((await api.get("/api/v1/admin/stats")).status, 403);
     assert.equal((await client(ctx.base).get("/api/v1/admin/stats")).status, 401);
@@ -194,8 +207,14 @@ describe("accounts", () => {
   test("password change and logout", async () => {
     const wrong = await api.post("/api/v1/me/password", { currentPassword: "nope-nope", newPassword: "another password" });
     assert.equal(wrong.status, 400);
+    const other = client(ctx.base);
+    await other.post("/api/v1/auth/login", { email: user.email, password: user.password });
+    assert.ok((await other.get("/api/v1/auth/me")).data.data.user);
+
     const ok = await api.post("/api/v1/me/password", { currentPassword: user.password, newPassword: "another password" });
     assert.equal(ok.status, 200);
+    assert.ok((await api.get("/api/v1/auth/me")).data.data.user, "current session survives");
+    assert.equal((await other.get("/api/v1/auth/me")).data.data.user, null, "other sessions are revoked");
     await api.post("/api/v1/auth/logout", {});
     assert.equal((await api.get("/api/v1/auth/me")).data.data.user, null);
     const login = await api.post("/api/v1/auth/login", { email: user.email, password: "another password" });
@@ -257,6 +276,28 @@ describe("admin", () => {
     await admin.patch(`/api/v1/admin/templates/${id}`, { isActive: false });
     assert.equal((await client(ctx.base).get("/api/v1/render?template=hello")).status, 404);
     assert.equal((await admin.delete(`/api/v1/admin/templates/${id}`)).status, 200);
+  });
+
+  test("partial updates keep fields that were not sent", async () => {
+    const plans = (await admin.get("/api/v1/admin/plans")).data.data;
+    const pro = plans.find((p) => p.slug === "pro");
+    const renamed = (await admin.patch(`/api/v1/admin/plans/${pro.id}`, { name: "Pro+" })).data.data;
+    assert.deepEqual({ ...renamed, name: pro.name }, pro);
+
+    const free = plans.find((p) => p.slug === "free");
+    assert.equal((await admin.patch(`/api/v1/admin/plans/${free.id}`, { name: "Starter" })).status, 200);
+
+    const template = (await admin.get("/api/v1/admin/templates")).data.data.find((t) => t.slug === "certificate");
+    const toggled = (await admin.patch(`/api/v1/admin/templates/${template.id}`, { isActive: false })).data.data;
+    assert.equal(toggled.isPremium, true);
+    assert.equal(toggled.category, template.category);
+    await admin.patch(`/api/v1/admin/templates/${template.id}`, { isActive: true });
+
+    await admin.patch("/api/v1/admin/settings", { registrationOpen: false, guestDailyLimit: 7 });
+    const settings = (await admin.patch("/api/v1/admin/settings", { watermarkText: "hti" })).data.data;
+    assert.equal(settings.registrationOpen, false);
+    assert.equal(settings.guestDailyLimit, 7);
+    await admin.patch("/api/v1/admin/settings", { registrationOpen: true, guestDailyLimit: 10 });
   });
 
   test("plans and settings", async () => {

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomId } from "../auth/crypto.js";
 import { parseDefinition } from "../engine/index.js";
+import { clientKey } from "../lib/client.js";
 import { HttpError } from "../lib/errors.js";
 import { rateLimit } from "../lib/rate-limit.js";
 import { policyFor, recordRender, usageFor } from "../services/renders.js";
@@ -41,6 +42,12 @@ function fromQuery(query) {
   return input;
 }
 
+function assertApiAccess(principal) {
+  if (principal?.via === "api_key" && !principal.plan.apiAccess) {
+    throw new HttpError(403, "Your plan does not include API access", { code: "api_access_denied" });
+  }
+}
+
 function setQuotaHeaders(res, usage, consumed = 0) {
   if (usage.limit === null) return;
   res.set("X-Quota-Limit", String(usage.limit));
@@ -68,13 +75,16 @@ export function renderRoutes({ db, config, renderer, storage }) {
   const handleRender = async (req, res) => {
     const data = parse(renderSchema, req.method === "GET" ? fromQuery(req.query) : req.body);
     const template = loadActiveTemplate(data.template);
-    const { principal } = req;
+    let { principal } = req;
+    // A GET render triggered by another site (link, <img>) must not spend the
+    // logged-in user's quota: treat it as a guest request instead.
+    if (req.method === "GET" && principal?.via === "session" && ["cross-site", "same-site"].includes(req.get("sec-fetch-site"))) {
+      principal = null;
+    }
     const settings = getSettings(db);
     const policy = policyFor(principal, settings);
 
-    if (principal?.via === "api_key" && !principal.plan.apiAccess) {
-      throw new HttpError(403, "Your plan does not include API access", { code: "api_access_denied" });
-    }
+    assertApiAccess(principal);
     if (template.isPremium && !policy.premiumTemplates) {
       throw new HttpError(403, "This template requires a premium plan", { code: "premium_template" });
     }
@@ -82,7 +92,8 @@ export function renderRoutes({ db, config, renderer, storage }) {
       throw new HttpError(403, `Maximum scale for your plan is ${policy.maxScale}`, { code: "scale_not_allowed" });
     }
 
-    const usage = usageFor(db, principal, req.ip, settings);
+    const client = clientKey(req.ip);
+    const usage = usageFor(db, principal, client, settings);
     setQuotaHeaders(res, usage);
     if (usage.limit !== null && usage.used >= usage.limit) {
       const message = principal
@@ -109,7 +120,7 @@ export function renderRoutes({ db, config, renderer, storage }) {
       id,
       userId: principal?.user.id,
       apiKeyId: principal?.apiKeyId,
-      ip: req.ip,
+      ip: client,
       templateSlug: template.slug,
       format: result.format,
       width: result.width,
@@ -149,6 +160,7 @@ export function renderRoutes({ db, config, renderer, storage }) {
   // so previews of published templates are always watermarked.
   router.post("/preview", rateLimit({ windowMs: 60_000, max: 90, message: "Too many preview requests" }), async (req, res) => {
     const data = parse(previewSchema, req.body);
+    assertApiAccess(req.principal);
     let definition;
     let watermark = "PREVIEW";
     if (data.definition !== undefined) {
