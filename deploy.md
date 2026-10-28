@@ -1,178 +1,152 @@
-# Panduan Deploy ke VPS Ubuntu dengan Nginx & PM2
+# Deploying to an Ubuntu VPS (Nginx + PM2)
 
-Panduan ini berisi langkah-langkah lengkap untuk melakukan deployment aplikasi **html-to-img** pada VPS Ubuntu Anda, menggunakan **Nginx** sebagai reverse proxy, **PM2** sebagai process manager, dan memasang **Chromium** beserta font untuk merender screenshot.
+This guide deploys html-to-img v2 on Ubuntu 22.04/24.04. It runs a single Node.js process managed by PM2, with Nginx in front for HTTPS. Chromium is no longer needed: rendering is done in-process by Satori and resvg.
 
----
+## Requirements
 
-## 📋 Prasyarat
-Pastikan Anda sudah memiliki akses SSH ke VPS Ubuntu Anda (disarankan Ubuntu 20.04 atau 22.04 LTS).
+- A VPS with at least 1 vCPU and 1 GB RAM (2 GB recommended)
+- A domain pointing at the VPS (for HTTPS)
+- SSH access with a sudo user
 
----
+## 1. Install Node.js 22 and git
 
-## 🛠️ Langkah 1: Update System & Install Node.js
-Hubungkan ke VPS Anda dan perbarui repositori paket:
 ```bash
 sudo apt update && sudo apt upgrade -y
-```
-
-Install Node.js (versi LTS direkomendasikan):
-```bash
-# Mengunduh setup script NodeSource untuk Node.js v20
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-
-# Install Node.js dan git
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs git
-```
-Verifikasi instalasi:
-```bash
-node -v
-npm -v
+node -v   # must be v22.13.0 or newer (node:sqlite is required)
 ```
 
----
-
-## 🌐 Langkah 2: Install & Configure Nginx
-Pasang Nginx untuk digunakan sebagai reverse proxy:
-```bash
-sudo apt install -y nginx
-```
-Pastikan firewall mengizinkan lalu lintas web HTTP/HTTPS:
-```bash
-sudo ufw allow 'Nginx Full'
-```
-
----
-
-## 📦 Langkah 3: Install Chromium & Font (Penting untuk Puppeteer)
-Karena aplikasi ini menggunakan `puppeteer-core` di sisi server untuk mengambil screenshot, Anda wajib memasang **Chromium** (atau Google Chrome) serta **paket font** agar karakter unicode, bahasa asing, dan emoji dapat dirender secara sempurna (tidak kotak-kotak):
+## 2. Get the code and build
 
 ```bash
-# Install Chromium Browser
-sudo apt install -y chromium-browser
-
-# Install dependensi font penting untuk rendering emoji dan teks multibahasa
-sudo apt install -y \
-  fonts-ipafont-gothic \
-  fonts-wqy-zenhei \
-  fonts-thai-tlwg \
-  fonts-kacst \
-  fonts-freefont-ttf \
-  fonts-liberation \
-  fonts-noto-color-emoji
-```
-
----
-
-## 📥 Langkah 4: Setup Aplikasi html-to-img
-Klon repositori proyek Anda ke dalam VPS (misalnya di folder `/var/www/` atau home directory):
-```bash
-# Pindah ke directory tujuan
+sudo mkdir -p /var/www && sudo chown "$USER" /var/www
 cd /var/www
-
-# Clone project (ubah URL di bawah sesuai dengan repository Anda)
-git clone https://github.com/username/html-to-img.git
+git clone https://github.com/freack21/html-to-img.git
 cd html-to-img
-
-# Install dependensi proyek
-npm install --production
+npm ci
+npm run build
+npm test
 ```
 
-### Konfigurasi Environment (`.env`)
-Salin contoh konfigurasi env dan sesuaikan port jika diperlukan:
+## 3. Configure
+
 ```bash
 cp .env.example .env
 nano .env
 ```
-Isi dari berkas `.env` (bisa dibiarkan port `3003` atau diubah sesuai keinginan):
-```env
+
+Set at least:
+
+```ini
 PORT=3003
+HOST=127.0.0.1
+NODE_ENV=production
+PUBLIC_URL=https://img.example.com
+TRUST_PROXY=loopback
 ```
 
----
+Keep `HOST=127.0.0.1` so the app is reachable only through Nginx. `TRUST_PROXY=loopback` makes the app trust Nginx's `X-Forwarded-For`, which guest quotas and rate limits rely on.
 
-## 🚀 Langkah 5: Jalankan Aplikasi menggunakan PM2
-PM2 digunakan agar aplikasi Node.js tetap berjalan di latar belakang (*background*) secara permanen dan otomatis restart jika VPS dinyalakan ulang.
+Create the first admin. A password is generated and printed once unless you set `ADMIN_PASSWORD`:
 
-Install PM2 secara global:
+```bash
+npm run create-admin -- --email you@example.com --name "Your Name"
+```
+
+## 4. Run with PM2
+
 ```bash
 sudo npm install -g pm2
-```
-Jalankan aplikasi dengan PM2:
-```bash
-pm2 start index.js --name "html-to-img"
-```
-Simpan daftar proses PM2 agar otomatis berjalan saat VPS reboot:
-```bash
+pm2 start ecosystem.config.cjs
 pm2 save
-pm2 startup
+pm2 startup        # run the command it prints
+pm2 logs html-to-img
 ```
-*(Ikuti perintah output instruksi `sudo env PATH=...` yang diberikan oleh PM2 di layar setelah Anda menjalankan `pm2 startup`)*.
 
----
+The process file runs **one instance in fork mode**. Don't switch to cluster mode: SQLite and the in-memory rate limiter are per process.
 
-## ⚙️ Langkah 6: Konfigurasi Nginx Reverse Proxy
-Sekarang kita akan membuat blok server Nginx agar request dari publik dialihkan ke aplikasi Node.js kita yang berjalan di port `3003`.
+## 5. Nginx reverse proxy
 
-Buat berkas konfigurasi baru di Nginx:
 ```bash
+sudo apt install -y nginx
 sudo nano /etc/nginx/sites-available/html-to-img
 ```
 
-Tempelkan konfigurasi berikut (ubah `domain_atau_ip_vps_anda` dengan IP publik VPS atau domain asli Anda):
 ```nginx
 server {
     listen 80;
-    server_name domain_atau_ip_vps_anda;
+    server_name img.example.com;
 
-    # Batas maksimum ukuran unggahan body (penting untuk base64 gambar yang besar)
-    client_max_body_size 10M;
+    # Uploaded images are sent as base64 inside JSON bodies.
+    client_max_body_size 16m;
 
     location / {
-        proxy_pass http://localhost:3003; # Sesuaikan dengan PORT di .env Anda
+        proxy_pass http://127.0.0.1:3003;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
+        # The app compares Origin with Host for cookie-authenticated writes.
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        
-        # Meneruskan info IP asli client
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
     }
 }
 ```
 
-Aktifkan konfigurasi situs tersebut dengan membuat tautan simbolik ke `sites-enabled`:
 ```bash
 sudo ln -s /etc/nginx/sites-available/html-to-img /etc/nginx/sites-enabled/
-```
-Hapus konfigurasi default Nginx (jika tidak digunakan lagi):
-```bash
-sudo rm /etc/nginx/sites-enabled/default
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Uji konfigurasi Nginx untuk memastikan tidak ada error sintaks:
-```bash
-sudo nginx -t
-```
-Restart layanan Nginx:
-```bash
-sudo systemctl restart nginx
-```
-
-Sekarang aplikasi Anda sudah bisa diakses publik menggunakan IP VPS atau domain Anda!
-
----
-
-## 🔒 Langkah 7: Pasang SSL Gratis (Let's Encrypt / HTTPS) - Opsional
-Gunakan Certbot untuk memasang sertifikat SSL gratis secara otomatis jika Anda menggunakan domain:
+## 6. HTTPS (Let's Encrypt)
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d img.example.com
 ```
-Jalankan Certbot untuk domain Anda:
+
+Session cookies are marked `Secure` when `NODE_ENV=production`, so log in over HTTPS.
+
+## 7. Firewall
+
 ```bash
-sudo certbot --nginx -d domain_atau_ip_vps_anda
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
 ```
-Ikuti instruksi di layar, dan Certbot akan otomatis mengonfigurasi pengalihan HTTP ke HTTPS di berkas konfigurasi Nginx Anda.
+
+## Updating
+
+```bash
+cd /var/www/html-to-img
+git pull origin main
+npm ci
+npm run build
+npm test
+pm2 reload html-to-img
+```
+
+Database migrations in `server/src/db/migrations` run automatically on startup.
+
+## Backups
+
+All state lives in `data/`: the database `app.db` (WAL mode) and rendered files in `storage/`, which expire anyway. Back up the database with SQLite's online backup, which is safe while the app is running:
+
+```bash
+sudo apt install -y sqlite3
+sqlite3 /var/www/html-to-img/data/app.db ".backup '/var/backups/html-to-img-$(date +%F).db'"
+```
+
+To restore: stop the app (`pm2 stop html-to-img`), replace `data/app.db`, delete any `app.db-wal` and `app.db-shm` files, then start it again.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| `node:sqlite` not found | `node -v` must be ≥ 22.13 |
+| Every guest shares one quota | Nginx must send `X-Forwarded-For`, and `TRUST_PROXY` must match the proxy address |
+| Login works but actions return `bad_origin` | Nginx must pass `proxy_set_header Host $host` |
+| Emoji show as boxes | The server needs outbound HTTPS to `cdn.jsdelivr.net` (or set `EMOJI_BASE_URL`) |
+| `413 Request Entity Too Large` | Raise `client_max_body_size` in Nginx |
