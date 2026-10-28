@@ -1,0 +1,159 @@
+{
+  "slug": "code",
+  "name": "Code Snippet",
+  "description": "Code in a macOS-style editor window.",
+  "category": "developer",
+  "definition": {
+    "width": 640,
+    "params": {
+      "code": {
+        "type": "string",
+        "label": "Code",
+        "default": "function greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet('World'));",
+        "maxLength": 2000,
+        "multiline": true
+      },
+      "fileName": {
+        "type": "string",
+        "label": "File name",
+        "default": "index.js",
+        "maxLength": 60
+      },
+      "theme": {
+        "type": "enum",
+        "label": "Theme",
+        "options": [
+          "dracula",
+          "github-dark",
+          "light"
+        ],
+        "default": "dracula"
+      },
+      "background": {
+        "type": "color",
+        "label": "Outer background",
+        "default": "#764ba2"
+      },
+      "fontSize": {
+        "type": "number",
+        "label": "Font size",
+        "default": 15,
+        "min": 10,
+        "max": 28
+      }
+    },
+    "root": {
+      "type": "box",
+      "style": {
+        "width": "100%",
+        "padding": 36,
+        "backgroundColor": "{{background}}",
+        "backgroundImage": "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(0,0,0,0.18))"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "flexDirection": "column",
+            "borderRadius": 12,
+            "overflow": "hidden",
+            "boxShadow": "0 20px 50px rgba(0,0,0,0.4)",
+            "backgroundColor": {
+              "$switch": "theme",
+              "cases": {
+                "dracula": "#282a36",
+                "github-dark": "#0d1117",
+                "light": "#ffffff"
+              }
+            },
+            "flexGrow": 1
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "alignItems": "center",
+                "padding": "12px 16px",
+                "gap": 8,
+                "backgroundColor": {
+                  "$switch": "theme",
+                  "cases": {
+                    "dracula": "#21222c",
+                    "github-dark": "#161b22",
+                    "light": "#f3f4f6"
+                  }
+                }
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "style": {
+                    "width": 12,
+                    "height": 12,
+                    "borderRadius": 6,
+                    "backgroundColor": "#ff5f56"
+                  }
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "width": 12,
+                    "height": 12,
+                    "borderRadius": 6,
+                    "backgroundColor": "#ffbd2e"
+                  }
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "width": 12,
+                    "height": 12,
+                    "borderRadius": 6,
+                    "backgroundColor": "#27c93f"
+                  }
+                },
+                {
+                  "type": "text",
+                  "if": "fileName",
+                  "text": "{{fileName}}",
+                  "style": {
+                    "marginLeft": 10,
+                    "fontSize": 13,
+                    "fontFamily": "JetBrains Mono",
+                    "color": {
+                      "$switch": "theme",
+                      "cases": {
+                        "dracula": "#6272a4",
+                        "github-dark": "#8b949e",
+                        "light": "#6b7280"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{{code}}",
+              "style": {
+                "padding": 20,
+                "fontFamily": "JetBrains Mono",
+                "fontSize": "{{fontSize}}",
+                "lineHeight": 1.6,
+                "whiteSpace": "pre-wrap",
+                "color": {
+                  "$switch": "theme",
+                  "cases": {
+                    "dracula": "#f8f8f2",
+                    "github-dark": "#e6edf3",
+                    "light": "#1f2937"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

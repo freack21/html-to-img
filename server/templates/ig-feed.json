@@ -1,0 +1,74 @@
+{
+  "slug": "ig-feed",
+  "name": "Instagram Post",
+  "description": "Instagram feed post with header, photo, actions and caption.",
+  "category": "social",
+  "definition": {
+    "width": 540,
+    "params": {
+      "img": { "type": "image", "label": "Photo", "default": "" },
+      "avatar": { "type": "image", "label": "Avatar", "default": "" },
+      "username": { "type": "string", "label": "Username", "default": "fkrvndii", "maxLength": 30 },
+      "location": { "type": "string", "label": "Location", "default": "Jakarta, Indonesia", "maxLength": 60 },
+      "likes": { "type": "string", "label": "Likes", "default": "1,248", "maxLength": 12 },
+      "caption": { "type": "string", "label": "Caption", "default": "Good vibes only ✨", "maxLength": 300, "multiline": true },
+      "date": { "type": "string", "label": "Date", "default": "Nov 2024", "maxLength": 30 },
+      "theme": { "type": "enum", "label": "Theme", "options": ["light", "dark"], "default": "light" }
+    },
+    "root": {
+      "type": "box",
+      "style": {
+        "flexDirection": "column",
+        "width": "100%",
+        "fontFamily": "Inter",
+        "borderRadius": 12,
+        "overflow": "hidden",
+        "backgroundColor": { "$switch": "theme", "cases": { "dark": "#000000" }, "default": "#ffffff" },
+        "border": { "$switch": "theme", "cases": { "dark": "1px solid #262626" }, "default": "1px solid #dbdbdb" },
+        "color": { "$switch": "theme", "cases": { "dark": "#f5f5f5" }, "default": "#262626" }
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": { "alignItems": "center", "padding": "12px 14px" },
+          "children": [
+            {
+              "type": "box",
+              "style": { "width": 42, "height": 42, "borderRadius": 21, "padding": 2, "backgroundImage": "linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5)" },
+              "children": [
+                { "type": "image", "if": "avatar", "src": "{{avatar}}", "style": { "width": 38, "height": 38, "borderRadius": 19, "objectFit": "cover", "border": { "$switch": "theme", "cases": { "dark": "2px solid #000000" }, "default": "2px solid #ffffff" } } },
+                { "type": "box", "if": "!avatar", "style": { "width": 38, "height": 38, "borderRadius": 19, "backgroundColor": "#c7c7c7", "border": { "$switch": "theme", "cases": { "dark": "2px solid #000000" }, "default": "2px solid #ffffff" } } }
+              ]
+            },
+            {
+              "type": "box",
+              "style": { "flexDirection": "column", "marginLeft": 10, "flexGrow": 1 },
+              "children": [
+                { "type": "text", "text": "{{username}}", "style": { "fontSize": 15, "fontWeight": 700 } },
+                { "type": "text", "if": "location", "text": "{{location}}", "style": { "fontSize": 12, "opacity": 0.7 } }
+              ]
+            },
+            { "type": "text", "text": "•••", "style": { "fontSize": 14, "fontWeight": 700 } }
+          ]
+        },
+        { "type": "image", "if": "img", "src": "{{img}}", "style": { "width": "100%", "height": 540, "objectFit": "cover" } },
+        { "type": "box", "if": "!img", "style": { "width": "100%", "height": 540, "backgroundImage": "radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%)" } },
+        {
+          "type": "box",
+          "style": { "flexDirection": "column", "padding": "12px 14px 16px" },
+          "children": [
+            { "type": "box", "style": { "gap": 16, "fontSize": 24, "marginBottom": 8 }, "children": [
+              { "type": "text", "text": "❤️" }, { "type": "text", "text": "💬" }, { "type": "text", "text": "📤" }
+            ] },
+            { "type": "text", "text": "{{likes}} likes", "style": { "fontSize": 14, "fontWeight": 700, "marginBottom": 4 } },
+            { "type": "box", "if": "caption", "style": { "flexWrap": "wrap", "fontSize": 14, "lineHeight": 1.4 }, "children": [
+              { "type": "text", "text": "{{username}}", "style": { "fontWeight": 700, "marginRight": 6 } },
+              { "type": "text", "text": "{{caption}}", "style": { "whiteSpace": "pre-wrap" } }
+            ] },
+            { "type": "text", "if": "date", "text": "{{date}}", "style": { "fontSize": 11, "opacity": 0.6, "marginTop": 8, "textTransform": "uppercase" } }
+          ]
+        }
+      ]
+    }
+  }
+}

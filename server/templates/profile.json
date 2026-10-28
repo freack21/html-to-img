@@ -1,0 +1,67 @@
+{
+  "slug": "profile",
+  "name": "Profile Card",
+  "description": "Social profile card with avatar, bio and stats.",
+  "category": "social",
+  "definition": {
+    "width": 420,
+    "params": {
+      "name": { "type": "string", "label": "Name", "default": "John Doe", "maxLength": 50 },
+      "bio": { "type": "string", "label": "Bio", "default": "Full-stack Developer | Coffee Lover ☕", "maxLength": 160, "multiline": true },
+      "avatar": { "type": "image", "label": "Avatar", "default": "" },
+      "posts": { "type": "string", "label": "Posts", "default": "42", "maxLength": 10 },
+      "followers": { "type": "string", "label": "Followers", "default": "1.2K", "maxLength": 10 },
+      "following": { "type": "string", "label": "Following", "default": "350", "maxLength": 10 },
+      "accentColor": { "type": "color", "label": "Accent color", "default": "#8b5cf6" },
+      "theme": { "type": "enum", "label": "Theme", "options": ["dark", "light"], "default": "dark" }
+    },
+    "root": {
+      "type": "box",
+      "style": {
+        "flexDirection": "column",
+        "width": "100%",
+        "borderRadius": 24,
+        "overflow": "hidden",
+        "fontFamily": "Poppins",
+        "backgroundColor": { "$switch": "theme", "cases": { "dark": "#111827" }, "default": "#ffffff" }
+      },
+      "children": [
+        { "type": "box", "style": { "height": 120, "backgroundColor": "{{accentColor}}", "backgroundImage": "linear-gradient(135deg, rgba(255,255,255,0.35), rgba(0,0,0,0.2))" } },
+        {
+          "type": "box",
+          "style": { "flexDirection": "column", "alignItems": "center", "padding": "0 28px 28px", "marginTop": -56, "textAlign": "center" },
+          "children": [
+            { "type": "image", "if": "avatar", "src": "{{avatar}}", "style": { "width": 112, "height": 112, "borderRadius": 56, "objectFit": "cover", "border": { "$switch": "theme", "cases": { "dark": "5px solid #111827" }, "default": "5px solid #ffffff" } } },
+            { "type": "box", "if": "!avatar", "style": { "width": 112, "height": 112, "borderRadius": 56, "backgroundColor": "{{accentColor}}", "border": { "$switch": "theme", "cases": { "dark": "5px solid #111827" }, "default": "5px solid #ffffff" } } },
+            { "type": "text", "text": "{{name}}", "style": { "marginTop": 12, "fontSize": 26, "fontWeight": 700, "color": { "$switch": "theme", "cases": { "dark": "#f9fafb" }, "default": "#111827" } } },
+            { "type": "text", "if": "bio", "text": "{{bio}}", "style": { "marginTop": 4, "fontSize": 15, "lineHeight": 1.5, "color": { "$switch": "theme", "cases": { "dark": "#9ca3af" }, "default": "#6b7280" } } },
+            {
+              "type": "box",
+              "style": {
+                "width": "100%",
+                "marginTop": 22,
+                "paddingTop": 18,
+                "justifyContent": "space-around",
+                "borderTop": { "$switch": "theme", "cases": { "dark": "1px solid #1f2937" }, "default": "1px solid #e5e7eb" }
+              },
+              "children": [
+                { "type": "box", "style": { "flexDirection": "column", "alignItems": "center" }, "children": [
+                  { "type": "text", "text": "{{posts}}", "style": { "fontSize": 22, "fontWeight": 700, "color": "{{accentColor}}" } },
+                  { "type": "text", "text": "Posts", "style": { "fontSize": 13, "color": { "$switch": "theme", "cases": { "dark": "#9ca3af" }, "default": "#6b7280" } } }
+                ] },
+                { "type": "box", "style": { "flexDirection": "column", "alignItems": "center" }, "children": [
+                  { "type": "text", "text": "{{followers}}", "style": { "fontSize": 22, "fontWeight": 700, "color": "{{accentColor}}" } },
+                  { "type": "text", "text": "Followers", "style": { "fontSize": 13, "color": { "$switch": "theme", "cases": { "dark": "#9ca3af" }, "default": "#6b7280" } } }
+                ] },
+                { "type": "box", "style": { "flexDirection": "column", "alignItems": "center" }, "children": [
+                  { "type": "text", "text": "{{following}}", "style": { "fontSize": 22, "fontWeight": 700, "color": "{{accentColor}}" } },
+                  { "type": "text", "text": "Following", "style": { "fontSize": 13, "color": { "$switch": "theme", "cases": { "dark": "#9ca3af" }, "default": "#6b7280" } } }
+                ] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

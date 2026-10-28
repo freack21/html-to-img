@@ -1,0 +1,87 @@
+{
+  "slug": "tweet",
+  "name": "Tweet",
+  "description": "A post card in the style of X/Twitter, light or dark.",
+  "category": "social",
+  "definition": {
+    "width": 560,
+    "params": {
+      "username": { "type": "string", "label": "Display name", "default": "John Doe", "maxLength": 50 },
+      "handle": { "type": "string", "label": "Handle (without @)", "default": "johndoe", "maxLength": 30 },
+      "avatar": { "type": "image", "label": "Avatar", "default": "" },
+      "content": { "type": "string", "label": "Content", "default": "This is a sample tweet! 🚀", "maxLength": 560, "multiline": true },
+      "date": { "type": "string", "label": "Date", "default": "10:30 AM · Nov 27, 2024", "maxLength": 50 },
+      "replies": { "type": "string", "label": "Replies", "default": "56", "maxLength": 10 },
+      "retweets": { "type": "string", "label": "Reposts", "default": "234", "maxLength": 10 },
+      "likes": { "type": "string", "label": "Likes", "default": "1.2K", "maxLength": 10 },
+      "views": { "type": "string", "label": "Views", "default": "12.5K", "maxLength": 10 },
+      "verified": { "type": "boolean", "label": "Verified badge", "default": true },
+      "theme": { "type": "enum", "label": "Theme", "options": ["dark", "light"], "default": "dark" }
+    },
+    "root": {
+      "type": "box",
+      "style": {
+        "flexDirection": "column",
+        "width": "100%",
+        "padding": 20,
+        "fontFamily": "Inter",
+        "borderRadius": 16,
+        "backgroundColor": { "$switch": "theme", "cases": { "dark": "#000000" }, "default": "#ffffff" },
+        "border": { "$switch": "theme", "cases": { "dark": "1px solid #2f3336" }, "default": "1px solid #e1e8ed" }
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": { "alignItems": "center", "marginBottom": 12 },
+          "children": [
+            { "type": "image", "if": "avatar", "src": "{{avatar}}", "style": { "width": 48, "height": 48, "borderRadius": 24, "objectFit": "cover", "marginRight": 12 } },
+            { "type": "box", "if": "!avatar", "style": { "width": 48, "height": 48, "borderRadius": 24, "backgroundColor": "#1d9bf0", "marginRight": 12 } },
+            {
+              "type": "box",
+              "style": { "flexDirection": "column" },
+              "children": [
+                {
+                  "type": "box",
+                  "style": { "alignItems": "center" },
+                  "children": [
+                    { "type": "text", "text": "{{username}}", "style": { "fontSize": 16, "fontWeight": 700, "color": { "$switch": "theme", "cases": { "dark": "#e7e9ea" }, "default": "#0f1419" } } },
+                    {
+                      "type": "box",
+                      "if": "verified",
+                      "style": { "width": 18, "height": 18, "borderRadius": 9, "backgroundColor": "#1d9bf0", "marginLeft": 4, "alignItems": "center", "justifyContent": "center" },
+                      "children": [
+                        { "type": "box", "style": { "width": 5, "height": 9, "borderRight": "2px solid #ffffff", "borderBottom": "2px solid #ffffff", "transform": "rotate(45deg)", "marginTop": -2 } }
+                      ]
+                    }
+                  ]
+                },
+                { "type": "text", "text": "@{{handle}}", "style": { "fontSize": 15, "color": { "$switch": "theme", "cases": { "dark": "#71767b" }, "default": "#536471" } } }
+              ]
+            }
+          ]
+        },
+        { "type": "text", "text": "{{content}}", "style": { "fontSize": 19, "lineHeight": 1.45, "whiteSpace": "pre-wrap", "marginBottom": 14, "color": { "$switch": "theme", "cases": { "dark": "#e7e9ea" }, "default": "#0f1419" } } },
+        {
+          "type": "text",
+          "text": "{{date}}",
+          "style": {
+            "fontSize": 15,
+            "paddingBottom": 12,
+            "color": { "$switch": "theme", "cases": { "dark": "#71767b" }, "default": "#536471" },
+            "borderBottom": { "$switch": "theme", "cases": { "dark": "1px solid #2f3336" }, "default": "1px solid #e1e8ed" }
+          }
+        },
+        {
+          "type": "box",
+          "style": { "paddingTop": 12, "gap": 28, "fontSize": 15, "color": { "$switch": "theme", "cases": { "dark": "#71767b" }, "default": "#536471" } },
+          "children": [
+            { "type": "text", "text": "💬 {{replies}}" },
+            { "type": "text", "text": "🔁 {{retweets}}" },
+            { "type": "text", "text": "❤️ {{likes}}" },
+            { "type": "text", "text": "📊 {{views}}" }
+          ]
+        }
+      ]
+    }
+  }
+}

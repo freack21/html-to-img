@@ -1,0 +1,67 @@
+{
+  "slug": "spotify",
+  "name": "Now Playing",
+  "description": "Music player card with album art and progress bar.",
+  "category": "fun",
+  "definition": {
+    "width": 520,
+    "params": {
+      "songTitle": { "type": "string", "label": "Song title", "default": "Blinding Lights", "maxLength": 60 },
+      "artist": { "type": "string", "label": "Artist", "default": "The Weeknd", "maxLength": 60 },
+      "album": { "type": "string", "label": "Album", "default": "After Hours", "maxLength": 60 },
+      "albumArt": { "type": "image", "label": "Album art", "default": "" },
+      "progress": { "type": "number", "label": "Progress (%)", "default": 65, "min": 0, "max": 100 },
+      "current": { "type": "string", "label": "Current time", "default": "2:10", "maxLength": 8 },
+      "duration": { "type": "string", "label": "Duration", "default": "3:20", "maxLength": 8 },
+      "accentColor": { "type": "color", "label": "Accent color", "default": "#1db954" }
+    },
+    "root": {
+      "type": "box",
+      "style": { "flexDirection": "column", "width": "100%", "padding": 24, "borderRadius": 20, "fontFamily": "Inter", "backgroundColor": "#121212", "backgroundImage": "linear-gradient(160deg, #2a2a2a 0%, #121212 70%)" },
+      "children": [
+        { "type": "text", "text": "NOW PLAYING", "style": { "fontSize": 12, "fontWeight": 700, "letterSpacing": 2, "color": "{{accentColor}}", "marginBottom": 16 } },
+        {
+          "type": "box",
+          "style": { "alignItems": "center" },
+          "children": [
+            { "type": "image", "if": "albumArt", "src": "{{albumArt}}", "style": { "width": 120, "height": 120, "borderRadius": 10, "objectFit": "cover" } },
+            { "type": "box", "if": "!albumArt", "style": { "width": 120, "height": 120, "borderRadius": 10, "backgroundImage": "linear-gradient(135deg, #f43f5e, #f59e0b)", "alignItems": "center", "justifyContent": "center" }, "children": [
+              { "type": "text", "text": "🎵", "style": { "fontSize": 56 } }
+            ] },
+            {
+              "type": "box",
+              "style": { "flexDirection": "column", "marginLeft": 20, "flexShrink": 1 },
+              "children": [
+                { "type": "text", "text": "{{songTitle}}", "style": { "fontSize": 26, "fontWeight": 800, "color": "#ffffff" } },
+                { "type": "text", "text": "{{artist}}", "style": { "fontSize": 17, "color": "#b3b3b3", "marginTop": 4 } },
+                { "type": "text", "if": "album", "text": "{{album}}", "style": { "fontSize": 14, "color": "#727272", "marginTop": 2 } }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": { "width": "100%", "height": 5, "borderRadius": 3, "backgroundColor": "#4d4d4d", "marginTop": 24 },
+          "children": [ { "type": "box", "style": { "width": "{{progress}}%", "height": "100%", "borderRadius": 3, "backgroundColor": "{{accentColor}}" } } ]
+        },
+        {
+          "type": "box",
+          "style": { "justifyContent": "space-between", "marginTop": 8, "fontSize": 12, "color": "#b3b3b3" },
+          "children": [ { "type": "text", "text": "{{current}}" }, { "type": "text", "text": "{{duration}}" } ]
+        },
+        {
+          "type": "box",
+          "style": { "justifyContent": "center", "alignItems": "center", "gap": 30, "marginTop": 10 },
+          "children": [
+            { "type": "box", "style": { "width": 0, "height": 0, "borderTop": "9px solid transparent", "borderBottom": "9px solid transparent", "borderRight": "14px solid #b3b3b3" } },
+            { "type": "box", "style": { "width": 52, "height": 52, "borderRadius": 26, "backgroundColor": "#ffffff", "alignItems": "center", "justifyContent": "center", "gap": 5 }, "children": [
+              { "type": "box", "style": { "width": 5, "height": 18, "backgroundColor": "#121212", "borderRadius": 1 } },
+              { "type": "box", "style": { "width": 5, "height": 18, "backgroundColor": "#121212", "borderRadius": 1 } }
+            ] },
+            { "type": "box", "style": { "width": 0, "height": 0, "borderTop": "9px solid transparent", "borderBottom": "9px solid transparent", "borderLeft": "14px solid #b3b3b3" } }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "slug": "meme",
+  "name": "Meme",
+  "description": "Classic meme with top, center and bottom text over an image.",
+  "category": "fun",
+  "definition": {
+    "width": 600,
+    "height": 600,
+    "params": {
+      "img": {
+        "type": "image",
+        "label": "Image",
+        "default": ""
+      },
+      "textTop": {
+        "type": "string",
+        "label": "Top text",
+        "default": "WHEN THE CODE",
+        "maxLength": 120
+      },
+      "textCenter": {
+        "type": "string",
+        "label": "Center text",
+        "default": "",
+        "maxLength": 120
+      },
+      "textBottom": {
+        "type": "string",
+        "label": "Bottom text",
+        "default": "WORKS ON FIRST TRY",
+        "maxLength": 120
+      },
+      "textColor": {
+        "type": "color",
+        "label": "Text color",
+        "default": "#ffffff"
+      },
+      "strokeColor": {
+        "type": "color",
+        "label": "Outline color",
+        "default": "#000000"
+      },
+      "fontSize": {
+        "type": "number",
+        "label": "Font size",
+        "default": 56,
+        "min": 16,
+        "max": 120
+      }
+    },
+    "root": {
+      "type": "box",
+      "style": {
+        "position": "relative",
+        "width": "100%",
+        "height": "100%",
+        "backgroundColor": "#111827",
+        "backgroundImage": "linear-gradient(135deg, #1f2937, #4b5563)"
+      },
+      "children": [
+        {
+          "type": "image",
+          "if": "img",
+          "src": "{{img}}",
+          "style": {
+            "position": "absolute",
+            "top": 0,
+            "left": 0,
+            "width": "100%",
+            "height": "100%",
+            "objectFit": "cover"
+          }
+        },
+        {
+          "type": "box",
+          "style": {
+            "position": "absolute",
+            "top": 0,
+            "left": 0,
+            "width": "100%",
+            "height": "100%",
+            "flexDirection": "column",
+            "justifyContent": "space-between",
+            "alignItems": "center",
+            "padding": "16px 20px 28px",
+            "fontFamily": "Anton",
+            "fontSize": "{{fontSize}}",
+            "color": "{{textColor}}",
+            "textAlign": "center",
+            "textTransform": "uppercase",
+            "letterSpacing": 2,
+            "lineHeight": 1.1,
+            "textShadow": "-3px -3px 0 {{strokeColor}}, 3px -3px 0 {{strokeColor}}, -3px 3px 0 {{strokeColor}}, 3px 3px 0 {{strokeColor}}, 0 3px 0 {{strokeColor}}, 0 -3px 0 {{strokeColor}}, 3px 0 0 {{strokeColor}}, -3px 0 0 {{strokeColor}}"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{{textTop}}",
+              "style": {
+                "minHeight": 10
+              }
+            },
+            {
+              "type": "text",
+              "text": "{{textCenter}}",
+              "style": {
+                "minHeight": 10
+              }
+            },
+            {
+              "type": "text",
+              "text": "{{textBottom}}",
+              "style": {
+                "minHeight": 10
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

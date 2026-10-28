@@ -1,0 +1,48 @@
+{
+  "slug": "yt-thumb",
+  "name": "YouTube Thumbnail",
+  "description": "1280×720 video thumbnail with bold headline and channel badge.",
+  "category": "social",
+  "definition": {
+    "width": 1280,
+    "height": 720,
+    "params": {
+      "text": { "type": "string", "label": "Headline", "default": "AMAZING VIDEO", "maxLength": 60 },
+      "subtext": { "type": "string", "label": "Subtext", "default": "You won't believe this!", "maxLength": 80 },
+      "emoji": { "type": "string", "label": "Emoji", "default": "🔥", "maxLength": 8 },
+      "bgImage": { "type": "image", "label": "Background image", "default": "" },
+      "accentColor": { "type": "color", "label": "Accent color", "default": "#ff0033" },
+      "avatar": { "type": "image", "label": "Channel avatar", "default": "" },
+      "channelName": { "type": "string", "label": "Channel name", "default": "My Channel", "maxLength": 40 },
+      "duration": { "type": "string", "label": "Duration", "default": "12:34", "maxLength": 10 }
+    },
+    "root": {
+      "type": "box",
+      "style": { "position": "relative", "width": "100%", "height": "100%", "fontFamily": "Poppins", "backgroundColor": "#0f172a", "backgroundImage": "linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #db2777 100%)" },
+      "children": [
+        { "type": "image", "if": "bgImage", "src": "{{bgImage}}", "style": { "position": "absolute", "top": 0, "left": 0, "width": "100%", "height": "100%", "objectFit": "cover" } },
+        { "type": "box", "style": { "position": "absolute", "top": 0, "left": 0, "width": "100%", "height": "100%", "backgroundImage": "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 100%)" } },
+        { "type": "text", "if": "emoji", "text": "{{emoji}}", "style": { "position": "absolute", "top": 40, "right": 60, "fontSize": 160 } },
+        {
+          "type": "box",
+          "style": { "position": "absolute", "left": 60, "right": 60, "bottom": 60, "flexDirection": "column" },
+          "children": [
+            { "type": "text", "text": "{{text}}", "style": { "fontSize": 104, "fontWeight": 800, "color": "#ffffff", "lineHeight": 1.05, "textTransform": "uppercase", "textShadow": "6px 6px 0 {{accentColor}}" } },
+            { "type": "text", "if": "subtext", "text": "{{subtext}}", "style": { "alignSelf": "flex-start", "marginTop": 20, "fontSize": 40, "fontWeight": 700, "color": "#111827", "backgroundColor": "#facc15", "padding": "6px 18px", "borderRadius": 10 } },
+            {
+              "type": "box",
+              "if": "channelName",
+              "style": { "alignItems": "center", "marginTop": 28 },
+              "children": [
+                { "type": "image", "if": "avatar", "src": "{{avatar}}", "style": { "width": 56, "height": 56, "borderRadius": 28, "objectFit": "cover", "border": "3px solid #ffffff", "marginRight": 14 } },
+                { "type": "box", "if": "!avatar", "style": { "width": 56, "height": 56, "borderRadius": 28, "backgroundColor": "{{accentColor}}", "border": "3px solid #ffffff", "marginRight": 14 } },
+                { "type": "text", "text": "{{channelName}}", "style": { "fontSize": 30, "fontWeight": 600, "color": "#ffffff" } }
+              ]
+            }
+          ]
+        },
+        { "type": "text", "if": "duration", "text": "{{duration}}", "style": { "position": "absolute", "right": 24, "bottom": 24, "fontSize": 28, "fontWeight": 600, "color": "#ffffff", "backgroundColor": "rgba(0,0,0,0.8)", "padding": "2px 12px", "borderRadius": 8 } }
+      ]
+    }
+  }
+}

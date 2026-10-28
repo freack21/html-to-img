@@ -1,0 +1,71 @@
+{
+  "slug": "certificate",
+  "name": "Certificate",
+  "description": "Landscape certificate of achievement with signature line.",
+  "category": "business",
+  "definition": {
+    "width": 1200,
+    "height": 850,
+    "params": {
+      "heading": { "type": "string", "label": "Heading", "default": "Certificate of Achievement", "maxLength": 60 },
+      "recipientName": { "type": "string", "label": "Recipient", "default": "John Doe", "maxLength": 60 },
+      "achievement": { "type": "string", "label": "Achievement", "default": "Excellence in Programming", "maxLength": 120 },
+      "date": { "type": "string", "label": "Date", "default": "November 27, 2024", "maxLength": 40 },
+      "issuer": { "type": "string", "label": "Issuer name", "default": "Tech Academy", "maxLength": 60 },
+      "issuerTitle": { "type": "string", "label": "Issuer title", "default": "Director", "maxLength": 60 },
+      "accentColor": { "type": "color", "label": "Accent color", "default": "#b8860b" }
+    },
+    "root": {
+      "type": "box",
+      "style": { "width": "100%", "height": "100%", "padding": 28, "backgroundColor": "#fffdf7", "fontFamily": "Inter" },
+      "children": [
+        {
+          "type": "box",
+          "style": { "flexGrow": 1, "border": "4px solid {{accentColor}}", "padding": 10 },
+          "children": [
+            {
+              "type": "box",
+              "style": { "flexGrow": 1, "flexDirection": "column", "alignItems": "center", "justifyContent": "center", "border": "1px solid {{accentColor}}", "padding": "40px 80px", "textAlign": "center" },
+              "children": [
+                { "type": "text", "text": "{{heading}}", "style": { "fontFamily": "Playfair Display", "fontSize": 54, "fontWeight": 700, "color": "#1f2937" } },
+                { "type": "box", "style": { "width": 120, "height": 3, "backgroundColor": "{{accentColor}}", "marginTop": 18, "marginBottom": 36 } },
+                { "type": "text", "text": "This certificate is proudly presented to", "style": { "fontSize": 22, "color": "#6b7280", "letterSpacing": 1 } },
+                { "type": "text", "text": "{{recipientName}}", "style": { "fontFamily": "Playfair Display", "fontStyle": "italic", "fontSize": 76, "color": "{{accentColor}}", "marginTop": 18, "marginBottom": 18 } },
+                { "type": "text", "text": "for {{achievement}}", "style": { "fontSize": 26, "color": "#374151", "maxWidth": 820 } },
+                {
+                  "type": "box",
+                  "style": { "width": "100%", "justifyContent": "space-between", "alignItems": "flex-end", "marginTop": 70 },
+                  "children": [
+                    {
+                      "type": "box",
+                      "style": { "flexDirection": "column", "alignItems": "center", "width": 280 },
+                      "children": [
+                        { "type": "text", "text": "{{date}}", "style": { "fontSize": 22, "color": "#1f2937", "marginBottom": 8 } },
+                        { "type": "box", "style": { "width": "100%", "height": 1, "backgroundColor": "#9ca3af" } },
+                        { "type": "text", "text": "Date", "style": { "fontSize": 16, "color": "#6b7280", "marginTop": 8 } }
+                      ]
+                    },
+                    {
+                      "type": "box",
+                      "style": { "width": 110, "height": 110, "borderRadius": 55, "backgroundColor": "{{accentColor}}", "alignItems": "center", "justifyContent": "center", "border": "6px solid #fde68a" },
+                      "children": [ { "type": "text", "text": "🏆", "style": { "fontSize": 50 } } ]
+                    },
+                    {
+                      "type": "box",
+                      "style": { "flexDirection": "column", "alignItems": "center", "width": 280 },
+                      "children": [
+                        { "type": "text", "text": "{{issuer}}", "style": { "fontSize": 22, "color": "#1f2937", "fontWeight": 600, "marginBottom": 8 } },
+                        { "type": "box", "style": { "width": "100%", "height": 1, "backgroundColor": "#9ca3af" } },
+                        { "type": "text", "text": "{{issuerTitle}}", "style": { "fontSize": 16, "color": "#6b7280", "marginTop": 8 } }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

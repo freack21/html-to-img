@@ -1,0 +1,43 @@
+{
+  "slug": "banner",
+  "name": "Event Banner",
+  "description": "Wide announcement banner with headline, date and location.",
+  "category": "business",
+  "definition": {
+    "width": 1200,
+    "height": 630,
+    "params": {
+      "headline": { "type": "string", "label": "Headline", "default": "MEGA EVENT 2024", "maxLength": 60 },
+      "subheadline": { "type": "string", "label": "Subheadline", "default": "Join us for an amazing experience!", "maxLength": 120 },
+      "date": { "type": "string", "label": "Date", "default": "December 25, 2024", "maxLength": 40 },
+      "location": { "type": "string", "label": "Location", "default": "Jakarta, Indonesia", "maxLength": 60 },
+      "bgColor": { "type": "color", "label": "Background color", "default": "#ff6b6b" },
+      "textColor": { "type": "color", "label": "Text color", "default": "#ffffff" }
+    },
+    "root": {
+      "type": "box",
+      "style": { "position": "relative", "width": "100%", "height": "100%", "overflow": "hidden", "backgroundColor": "{{bgColor}}", "fontFamily": "Poppins", "color": "{{textColor}}" },
+      "children": [
+        { "type": "box", "style": { "position": "absolute", "top": 0, "left": 0, "width": "100%", "height": "100%", "backgroundImage": "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.25) 100%)" } },
+        { "type": "box", "style": { "position": "absolute", "width": 520, "height": 520, "borderRadius": 260, "top": -200, "right": -120, "backgroundColor": "rgba(255,255,255,0.12)" } },
+        { "type": "box", "style": { "position": "absolute", "width": 360, "height": 360, "borderRadius": 180, "bottom": -160, "left": -100, "backgroundColor": "rgba(255,255,255,0.1)" } },
+        {
+          "type": "box",
+          "style": { "position": "relative", "flexDirection": "column", "justifyContent": "center", "width": "100%", "height": "100%", "padding": "0 90px" },
+          "children": [
+            { "type": "text", "text": "{{headline}}", "style": { "fontSize": 92, "fontWeight": 800, "lineHeight": 1.05, "letterSpacing": -1 } },
+            { "type": "text", "if": "subheadline", "text": "{{subheadline}}", "style": { "fontSize": 34, "fontWeight": 500, "marginTop": 18, "opacity": 0.9 } },
+            {
+              "type": "box",
+              "style": { "marginTop": 44, "gap": 18 },
+              "children": [
+                { "type": "text", "if": "date", "text": "📅 {{date}}", "style": { "fontSize": 26, "fontWeight": 600, "padding": "10px 24px", "borderRadius": 999, "backgroundColor": "rgba(255,255,255,0.2)" } },
+                { "type": "text", "if": "location", "text": "📍 {{location}}", "style": { "fontSize": 26, "fontWeight": 600, "padding": "10px 24px", "borderRadius": 999, "backgroundColor": "rgba(255,255,255,0.2)" } }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

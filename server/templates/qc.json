@@ -1,0 +1,62 @@
+{
+  "slug": "qc",
+  "name": "Quick Chat",
+  "description": "Chat bubble with avatar, name and message. Great for stickers and bots.",
+  "category": "chat",
+  "definition": {
+    "width": 420,
+    "params": {
+      "name": { "type": "string", "label": "Name", "default": "Your Name", "maxLength": 60 },
+      "msg": { "type": "string", "label": "Message", "default": "Hello, this is a quick chat", "maxLength": 500, "multiline": true },
+      "img": { "type": "image", "label": "Avatar", "default": "" },
+      "nameColor": { "type": "color", "label": "Name color", "default": "#f59e0b" },
+      "bgColor": { "type": "color", "label": "Bubble color", "default": "#ffffff" },
+      "textColor": { "type": "color", "label": "Text color", "default": "#111827" }
+    },
+    "root": {
+      "type": "box",
+      "style": { "alignItems": "flex-start", "padding": 8, "fontFamily": "Figtree" },
+      "children": [
+        {
+          "type": "image",
+          "if": "img",
+          "src": "{{img}}",
+          "style": { "width": 64, "height": 64, "borderRadius": 32, "objectFit": "cover" }
+        },
+        {
+          "type": "box",
+          "if": "!img",
+          "style": {
+            "width": 64,
+            "height": 64,
+            "borderRadius": 32,
+            "backgroundImage": "linear-gradient(135deg, #667eea, #764ba2)"
+          }
+        },
+        {
+          "type": "box",
+          "style": {
+            "flexDirection": "column",
+            "marginLeft": 8,
+            "padding": "12px 16px",
+            "borderRadius": 16,
+            "backgroundColor": "{{bgColor}}",
+            "maxWidth": 332
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{{name}}",
+              "style": { "fontWeight": 700, "fontSize": 26, "color": "{{nameColor}}", "marginBottom": 4, "lineClamp": 1 }
+            },
+            {
+              "type": "text",
+              "text": "{{msg}}",
+              "style": { "fontSize": 28, "color": "{{textColor}}", "whiteSpace": "pre-wrap" }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

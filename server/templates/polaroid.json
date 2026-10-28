@@ -1,0 +1,38 @@
+{
+  "slug": "polaroid",
+  "name": "Polaroid",
+  "description": "Instant-photo frame with handwritten-style caption.",
+  "category": "fun",
+  "definition": {
+    "width": 520,
+    "height": 600,
+    "params": {
+      "img": { "type": "image", "label": "Photo", "default": "" },
+      "caption": { "type": "string", "label": "Caption", "default": "Good vibes only ✨", "maxLength": 60 },
+      "date": { "type": "string", "label": "Date", "default": "Nov 2024", "maxLength": 30 },
+      "rotation": { "type": "number", "label": "Rotation (deg)", "default": -3, "min": -15, "max": 15 }
+    },
+    "root": {
+      "type": "box",
+      "style": { "width": "100%", "height": "100%", "alignItems": "center", "justifyContent": "center" },
+      "children": [
+        {
+          "type": "box",
+          "style": { "flexDirection": "column", "width": 420, "padding": "20px 20px 0", "backgroundColor": "#fdfdfb", "boxShadow": "0 12px 30px rgba(0,0,0,0.25)", "transform": "rotate({{rotation}}deg)" },
+          "children": [
+            { "type": "image", "if": "img", "src": "{{img}}", "style": { "width": 380, "height": 380, "objectFit": "cover" } },
+            { "type": "box", "if": "!img", "style": { "width": 380, "height": 380, "backgroundImage": "linear-gradient(160deg, #fde68a 0%, #f472b6 55%, #6366f1 100%)" } },
+            {
+              "type": "box",
+              "style": { "flexDirection": "column", "alignItems": "center", "padding": "18px 0 22px" },
+              "children": [
+                { "type": "text", "text": "{{caption}}", "style": { "fontFamily": "Playfair Display", "fontStyle": "italic", "fontSize": 28, "color": "#374151" } },
+                { "type": "text", "if": "date", "text": "{{date}}", "style": { "fontSize": 14, "color": "#9ca3af", "marginTop": 4 } }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
