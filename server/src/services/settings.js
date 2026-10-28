@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ValidationError, zodDetails } from "../lib/errors.js";
+import { onlyProvided } from "../lib/patch.js";
 
 export const settingsSchema = z.object({
   registrationOpen: z.boolean().default(true),
@@ -29,6 +30,6 @@ export function updateSettings(db, patch) {
   const upsert = db.prepare(
     "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
   );
-  for (const [key, value] of Object.entries(result.data)) upsert.run(key, JSON.stringify(value));
+  for (const [key, value] of Object.entries(onlyProvided(result.data, patch))) upsert.run(key, JSON.stringify(value));
   return getSettings(db);
 }

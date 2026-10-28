@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { transaction, now } from "../db/index.js";
 import { HttpError, ValidationError, zodDetails } from "../lib/errors.js";
+import { onlyProvided } from "../lib/patch.js";
 
 export const planSchema = z.object({
   slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,29}$/, "Slug must be 2-30 chars of a-z, 0-9 and dashes"),
@@ -56,7 +57,7 @@ function parse(input, partial) {
   const schema = partial ? planSchema.partial().strict() : planSchema.strict();
   const result = schema.safeParse(input);
   if (!result.success) throw new ValidationError("Invalid plan", zodDetails(result.error));
-  return result.data;
+  return partial ? onlyProvided(result.data, input) : result.data;
 }
 
 export function listPlans(db, { activeOnly = false } = {}) {
