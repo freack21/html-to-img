@@ -41,6 +41,12 @@ export function createApp(ctx) {
   app.set("trust proxy", config.trustProxy);
   app.use(securityHeaders);
 
+  // Liveness/readiness for Docker and Coolify health checks: fails if the database is unusable.
+  app.get("/healthz", (req, res) => {
+    db.prepare("SELECT 1").get();
+    res.set("Cache-Control", "no-store").json({ status: "ok" });
+  });
+
   const api = express.Router();
   api.use(express.json({ limit: "16mb" }));
   api.use(authenticate(db));

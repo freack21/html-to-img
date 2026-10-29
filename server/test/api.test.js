@@ -123,6 +123,12 @@ describe("guest rendering", () => {
   });
 });
 
+test("health check reports ok", async () => {
+  const res = await client(ctx.base).get("/healthz");
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.data, { status: "ok" });
+});
+
 test("a malformed session cookie is ignored", async () => {
   const res = await client(ctx.base).get("/api/v1/templates", { headers: { cookie: "hti_session=%" } });
   assert.equal(res.status, 200);
