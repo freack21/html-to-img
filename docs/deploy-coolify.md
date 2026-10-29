@@ -1,121 +1,175 @@
 # Deploying with Docker and Coolify
 
-This guide deploys html-to-img to a server managed by [Coolify](https://coolify.io) v4. The repository already contains everything Coolify needs:
+[Coolify](https://coolify.io) is a self-hosted platform (like a private Heroku/Vercel) that runs on your own server. It builds the app from GitHub with Docker, puts it behind HTTPS with automatic Let's Encrypt certificates, and gives you a dashboard for logs, environment variables, backups and redeploys.
 
-| File | Purpose |
-| --- | --- |
-| `Dockerfile` | Multi-stage image: builds the React app, installs server production dependencies, runs as the unprivileged `node` user, health check on `/healthz` |
-| `docker-compose.yml` | The Coolify resource definition: domain wiring, environment and the persistent `hti-data` volume |
-| `.dockerignore` | Keeps `node_modules`, `data/`, tests and secrets out of the build context |
-| `.github/workflows/ci.yml` | Tests, builds and validates the image on every push/PR; triggers the Coolify deploy only after tests pass on `main` |
-| `server/scripts/backup-db.js` | Online SQLite backup with pruning, meant for a Coolify scheduled task |
+This guide takes a fresh server to a running html-to-img in about 20 minutes. Most of the work is done by two scripts in this repository:
 
-**No external database is needed.** The app uses SQLite (`node:sqlite`) stored on the `hti-data` volume. An existing MariaDB/phpMyAdmin on the server is not used.
-
-## 1. Prerequisites
-
-- Coolify v4 installed on the server, with the server added and validated.
-- Access to the GitHub repository from Coolify: either the repo is public or the Coolify GitHub App is installed on it.
-- A DNS `A` (and optionally `AAAA`) record for your domain, e.g. `img.example.com`, pointing at the server.
-- At least 1 vCPU and 1 GB RAM free for the app (2 GB recommended while building).
-
-## 2. Create the resource
-
-1. In Coolify, open your project → **+ New** → **Public Repository** (or **Private Repository (with GitHub App)**).
-2. Repository `https://github.com/freack21/html-to-img`, branch `main`.
-3. **Build Pack:** `Docker Compose`. **Docker Compose Location:** `/docker-compose.yml`.
-4. Save. Coolify reads the compose file and shows one service, `app`.
-
-## 3. Domain
-
-Coolify generates a temporary domain for `SERVICE_URL_APP_3003`. To use your own, open the `app` service settings and set **Domains** to:
-
-```
-https://img.example.com:3003
-```
-
-The `:3003` suffix tells Coolify's proxy which container port to route to; the public URL stays `https://img.example.com`. Coolify issues the TLS certificate. The app reads the domain from `SERVICE_URL_APP_3003` (as `PUBLIC_URL`) to build absolute image links.
-
-## 4. Environment variables
-
-Nothing is required. Optional overrides go in the resource's **Environment Variables** tab:
-
-| Variable | Default | When to change |
+| Step | Who | Time |
 | --- | --- | --- |
-| `NODE_IMAGE` | `node:22-bookworm-slim` | Build fails with `429 Too Many Requests` from Docker Hub: use `mirror.gcr.io/library/node:22-bookworm-slim` |
-| `TRUST_PROXY` | `loopback, uniquelocal` | Only if traffic reaches the container through a proxy outside private networks (e.g. Cloudflare Tunnel on a public IP) |
-| `MAX_IMAGE_BYTES` | `5242880` | Larger remote/uploaded images |
-| `IMAGE_TIMEOUT_MS` | `5000` | Slow image hosts |
-| `EMOJI_BASE_URL` | Twemoji on jsDelivr | Self-hosted emoji, or empty to disable |
+| 1. Check the server | `setup.sh check` | 1 min |
+| 2. Install Coolify | `setup.sh install` | 5 min |
+| 3. Create the Coolify account and API token | you, in the browser | 5 min |
+| 4. Point your domain at the server | you, at your DNS provider | 2 min (+ propagation) |
+| 5. Create and deploy the app | `setup.sh deploy` | 5 min |
+| 6. Optional: deploy only after CI passes | you, in GitHub | 3 min |
 
-Runtime settings (guest limits, watermark text, registration) live in **Admin → Settings** inside the app.
+**No external database is needed.** html-to-img stores its data in SQLite on a Docker volume. An existing MariaDB/MySQL and phpMyAdmin on the server are left alone. The only thing that can get in the way is a web server already using ports 80/443 (see [Port 80/443 already in use](#port-80443-already-in-use)).
 
-## 5. Deploy and verify
+## Requirements
 
-Click **Deploy**. The first build takes 1–3 minutes. When it is done:
+- A Linux server, ideally Ubuntu 22.04/24.04 LTS or Debian 12, with **2 CPU cores, 2 GB RAM and 10 GB free disk** (Coolify's minimum). You need root or sudo over SSH.
+- A domain or subdomain you control, e.g. `img.example.com`.
+- Ports 22, 80, 443 and 8000 reachable from the internet. Port 8000 is only needed until the dashboard has its own domain.
 
-```bash
-curl https://img.example.com/healthz          # {"status":"ok"}
-curl -o qc.png "https://img.example.com/api/v1/render?template=qc&name=Hello"
-```
+## 1. Check the server
 
-The container shows **healthy** in Coolify once `/healthz` answers.
-
-## 6. Create the first admin
-
-Open the resource → **Terminal**, pick the `app` container and run:
+Connect over SSH and download the helper:
 
 ```bash
-node --disable-warning=ExperimentalWarning scripts/create-admin.js --email you@example.com --name "Your Name"
+ssh your-user@your-server-ip
+curl -fsSL https://raw.githubusercontent.com/freack21/html-to-img/main/deploy/coolify/setup.sh -o setup.sh
+sudo bash setup.sh check
 ```
 
-It prints a generated password once. Log in at `https://img.example.com/login` and change it under **Dashboard → Account**. Running the command again for an existing email promotes that user to admin.
+The check is read-only. It reports the OS, CPU, memory, disk, and whether ports 80/443/8000/6001/6002 are free. Fix every `✘` before continuing.
 
-## 7. Backups
-
-The database lives in the `hti-data` volume (`/app/data/app.db`). Add a **Scheduled Task** on the resource:
-
-- **Name:** `backup-db`
-- **Command:** `node --disable-warning=ExperimentalWarning scripts/backup-db.js --keep 14`
-- **Frequency:** `0 3 * * *` (daily, 03:00 server time)
-- **Container:** `app`
-
-Backups are written to `/app/data/backups/` and the 14 newest are kept. They live on the same volume as the database, so also copy them off the server. For example, run this from the host via cron:
+## 2. Install Coolify
 
 ```bash
-docker cp "$(docker ps -qf name=app- | head -n1)":/app/data/backups ./html-to-img-backups
+sudo bash setup.sh install
 ```
 
-To restore: stop the resource, copy the chosen backup over `/app/data/app.db` (and delete `app.db-wal` / `app.db-shm`), then start it again.
+This runs the checks again, asks for confirmation, then runs Coolify's official installer (`https://cdn.coollabs.io/coolify/install.sh`). The installer sets up Docker and Coolify. When it finishes, it prints the dashboard address: `http://<server-ip>:8000`.
 
-## 8. Deploy only after tests pass (recommended)
+## 3. Create the Coolify account and an API token
 
-By default Coolify redeploys on every push. To deploy only commits that passed CI:
+Do this right after installing: **whoever opens the dashboard first becomes its owner.**
 
-1. Coolify → **Keys & Tokens → API Tokens** → create a token with the **deploy** permission.
-2. Resource → **Webhooks** → copy the **Deploy Webhook** URL (`https://<coolify>/api/v1/deploy?uuid=<uuid>&force=false`).
-3. GitHub → repository **Settings → Secrets and variables → Actions** → add:
-   - `COOLIFY_DEPLOY_WEBHOOK` = the webhook URL
-   - `COOLIFY_TOKEN` = the API token
-4. Resource → **Advanced** → turn off **Auto Deploy**.
+1. Open `http://<server-ip>:8000` and register your admin account. Use a strong password.
+2. Onboarding: choose **This Machine / localhost** as the server and accept the defaults.
+3. **Settings → Advanced → API and MCP**: set **API access** to **Enabled** and click **Save changes**. Leave *Allowed API IPs* empty, since the script calls the API from the server itself.
+4. **Keys & Tokens → API tokens**: create a token named `setup`, select the **root** permission, click **Create** and copy the token. It is shown only once. Paste it into the terminal in step 5, never into a chat or a file.
 
-From then on, `.github/workflows/ci.yml` runs tests, builds the image and calls the webhook only for pushes to `main` that pass. Without the secrets, the deploy job is skipped.
+## 4. Point your domain at the server
 
-## Operational notes
+At your DNS provider (Cloudflare, Niagahoster, Namecheap, …) add:
 
-- **Run one replica.** SQLite and the in-memory rate limiter are per container. Don't scale the service horizontally.
-- **Resource limits.** 1 CPU and 768 MB memory are plenty for moderate traffic. Rendering is CPU-bound, at 40–300 ms per image.
-- **Volume ownership.** The image runs as uid 1000 and the named volume inherits that ownership. If you replace it with a bind mount, `chown 1000:1000` the host directory first.
-- **Outbound network.** The server must reach `cdn.jsdelivr.net` (emoji) and any image hosts your templates use.
+| Type | Name | Value |
+| --- | --- | --- |
+| `A` | `img` (for `img.example.com`) | your server's public IP |
+
+If you use Cloudflare, set the record to **DNS only** (grey cloud) for the first deploy so Let's Encrypt can issue the certificate. You can turn the proxy back on afterwards with SSL mode **Full (strict)**.
+
+## 5. Create and deploy the app
+
+```bash
+sudo bash setup.sh deploy
+```
+
+The script asks for:
+
+- **Coolify API token**: from step 3. Input is hidden.
+- **App domain**: e.g. `img.example.com`. Leave it empty to get a temporary `*.sslip.io` address.
+- **Admin email**: the first html-to-img admin. A password is generated and printed once.
+- **Docker Hub mirror**: answer `y` only if a previous build failed with `429 Too Many Requests`.
+
+It then uses the Coolify API to:
+
+1. create a project and an application from `https://github.com/freack21/html-to-img` (branch `main`, build pack **Docker Compose**, file `/docker-compose.yml`);
+2. attach your domain (routed to container port 3003, with HTTPS);
+3. set the admin environment variables;
+4. schedule a daily database backup (`backup-db`, 03:00);
+5. deploy and wait until the build finishes.
+
+When it prints `✅ html-to-img is configured and deployed`, open `https://img.example.com`, log in with the printed admin credentials, and change the password under **Dashboard → Account**.
+
+Running `setup.sh deploy` again is safe. It reuses the existing project, app and backup task, updates the domain, redeploys, and doesn't reset the admin password. To deploy another branch, add `--branch <name>`.
+
+<details>
+<summary>Prefer clicking? The same setup by hand</summary>
+
+1. Project → **+ New** → **Public Repository** → `https://github.com/freack21/html-to-img`, branch `main`.
+2. **Build Pack:** `Docker Compose`, **Docker Compose Location:** `/docker-compose.yml` → **Continue**.
+3. In the `app` service set **Domains** to `https://img.example.com:3003`. The `:3003` is the container port; visitors still use `https://img.example.com`.
+4. **Environment Variables:** add `ADMIN_EMAIL` and `ADMIN_PASSWORD` (8+ characters).
+5. **Scheduled Tasks → + Add:** name `backup-db`, command `node --disable-warning=ExperimentalWarning scripts/backup-db.js --keep 14`, frequency `0 3 * * *`, container `app`.
+6. Click **Deploy** and watch the **Deployments** tab.
+</details>
+
+## 6. Optional: deploy automatically after tests pass
+
+Coolify does not watch a public repository on its own. To redeploy whenever `main` changes, and only when CI is green:
+
+1. Coolify → **Keys & Tokens → API tokens**: create a token with only the **deploy** permission.
+2. Coolify → your application → **Webhooks**: copy the **Deploy Webhook** URL. `setup.sh deploy` also prints it.
+3. GitHub → repository **Settings → Secrets and variables → Actions → New repository secret**:
+   - `COOLIFY_DEPLOY_WEBHOOK`: the webhook URL. It must be reachable from the internet, e.g. `http://<server-ip>:8000/api/v1/deploy?uuid=…&force=false`, or your Coolify domain.
+   - `COOLIFY_TOKEN`: the deploy-only token.
+
+`.github/workflows/ci.yml` runs the tests, builds the web app and the Docker image, then calls the webhook for pushes to `main`. Without the secrets, the deploy step is skipped.
+
+Afterwards, delete the `setup` root token in Coolify (or keep it somewhere safe if you plan to re-run `setup.sh deploy`).
+
+## Port 80/443 already in use
+
+Coolify's proxy (Traefik) must own ports 80 and 443. If `setup.sh check` shows them taken by `apache2`, `nginx` or `httpd` (common when phpMyAdmin or other sites are installed), choose one:
+
+**A. Move the existing web server to another port** (phpMyAdmin keeps working at `http://<server-ip>:8080`). For Apache:
+
+```bash
+sudo sed -i 's/^Listen 80$/Listen 8080/; s/^\(\s*\)Listen 443/\1# Listen 443/' /etc/apache2/ports.conf
+sudo sed -i --follow-symlinks 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' /etc/apache2/sites-enabled/*.conf
+sudo a2dissite default-ssl 2>/dev/null || true   # its :443 site would no longer have a Listen
+sudo apachectl configtest && sudo systemctl restart apache2
+```
+
+Take a copy of `/etc/apache2` first (`sudo cp -a /etc/apache2 /etc/apache2.bak`) so you can roll back.
+
+For Nginx, change `listen 80;` to `listen 8080;` (and comment out `listen 443 …`) in `/etc/nginx/sites-enabled/*`, then `sudo nginx -t && sudo systemctl restart nginx`. Allow the new port in your firewall if you need it, and re-run `sudo bash setup.sh check`.
+
+**B. Retire it.** If the web server only exists for phpMyAdmin, you can stop it (`sudo systemctl disable --now apache2`) and later run phpMyAdmin as a Coolify service, which gives it HTTPS and a domain.
+
+MariaDB/MySQL on port 3306 doesn't conflict and needs no changes.
+
+## Day-to-day operations
+
+| Task | How |
+| --- | --- |
+| Logs | Application → **Logs** (runtime) or **Deployments** (build) |
+| Redeploy | Application → **Redeploy**, a push to `main` (with step 6), or `sudo bash setup.sh deploy` |
+| Shell in the container | Application → **Terminal** → container `app` |
+| Create another admin | Terminal: `node --disable-warning=ExperimentalWarning scripts/create-admin.js --email someone@example.com` |
+| Backups | Written daily to `/app/data/backups/` (14 kept). Copy them off the server regularly, e.g. `docker cp $(docker ps -qf name=app- \| head -n1):/app/data/backups ./html-to-img-backups` |
+| Restore a backup | Stop the app, copy the backup over `/app/data/app.db`, delete `app.db-wal` and `app.db-shm`, then start it |
+| App settings | html-to-img **Admin → Settings** (guest limits, watermark, registration) |
+
+### Optional environment variables
+
+Set these under the application's **Environment Variables**, then redeploy:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NODE_IMAGE` | `node:22-bookworm-slim` | Base image. Use `mirror.gcr.io/library/node:22-bookworm-slim` if Docker Hub rate-limits builds |
+| `TRUST_PROXY` | `loopback, uniquelocal` | Which proxies to trust for client IPs |
+| `MAX_IMAGE_BYTES` / `IMAGE_TIMEOUT_MS` | `5242880` / `5000` | Limits for remote images |
+| `EMOJI_BASE_URL` | Twemoji on jsDelivr | Emoji source; empty disables emoji |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` | — | First admin, created only if that email has no account |
+
+### Things to keep as they are
+
+- **One replica.** SQLite and the rate limiter live inside the container, so don't scale the service.
+- **The `hti-data` volume** holds the database. Deleting the application's volumes deletes all users and templates.
+- The image runs as uid 1000. If you replace the named volume with a bind mount, `chown 1000:1000` the directory.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |
-| Build: `429 Too Many Requests` from Docker Hub | Set `NODE_IMAGE=mirror.gcr.io/library/node:22-bookworm-slim` and redeploy |
-| Container unhealthy | Check the deployment logs. The app must log `listening on http://0.0.0.0:3003` |
-| `502 Bad Gateway` | The domain is missing the `:3003` suffix, or the container is still starting |
-| Image links point to the wrong host | Check the domain under `SERVICE_URL_APP_3003`; it becomes `PUBLIC_URL` |
-| All guests share one daily quota | `TRUST_PROXY` doesn't cover the proxy's address |
-| Actions return `bad_origin` after login | A proxy in front of Coolify rewrote the `Host` header; preserve it |
-| `SQLITE_READONLY` / permission denied in `/app/data` | The volume is not owned by uid 1000 (see Volume ownership) |
+| `setup.sh deploy`: `403 … Enable Settings > Advanced > API access` | Turn on API access (step 3.3) and make sure the token has the **root** permission |
+| `setup.sh deploy`: `401` | The token was mistyped or deleted; create a new one |
+| Build fails with `429 Too Many Requests` | Re-run `setup.sh deploy` and answer `y` to the mirror question, or set `NODE_IMAGE` (see above) |
+| Site shows `404 page not found` (Traefik) | The domain is not attached. It should be `https://img.example.com:3003` on the `app` service. Redeploy afterwards |
+| HTTPS certificate error | DNS doesn't point to the server yet, or Cloudflare proxy is on; see step 4. Coolify retries automatically |
+| `502 Bad Gateway` | The container is starting or crashed; check **Logs** |
+| Admin login doesn't work | The admin is only created if the email had no account. Check the logs for `Created admin account`, or use the Terminal command above |
+| All guests share one daily quota | A proxy in front of Coolify hides client IPs; adjust `TRUST_PROXY` |

@@ -186,7 +186,7 @@ These are the seeded defaults; all of them are editable in the admin panel. Mont
 
 ## Deployment
 
-- **Docker + Coolify (recommended):** see [docs/deploy-coolify.md](docs/deploy-coolify.md). It uses the `Dockerfile` and `docker-compose.yml` in this repository and adds a CI-gated deploy and scheduled backups.
+- **Docker + Coolify (recommended):** see [docs/deploy-coolify.md](docs/deploy-coolify.md). `deploy/coolify/setup.sh` checks the server, installs Coolify, then creates and deploys the app through the Coolify API.
 - **Bare VPS with PM2 + Nginx:** see [deploy.md](deploy.md).
 
 Any Docker host works too:
@@ -194,6 +194,7 @@ Any Docker host works too:
 ```bash
 docker build -t html-to-img .
 docker run -d --name html-to-img -p 3003:3003 -v hti-data:/app/data html-to-img
+# or pass -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD=... to `docker run` to create the first admin on boot
 docker exec html-to-img node --disable-warning=ExperimentalWarning scripts/create-admin.js --email you@example.com
 ```
 
