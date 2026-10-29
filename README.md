@@ -186,7 +186,18 @@ These are the seeded defaults; all of them are editable in the admin panel. Mont
 
 ## Deployment
 
-See **[deploy.md](deploy.md)** for the Ubuntu VPS guide (Node 22, PM2, Nginx, HTTPS, backups and updates).
+- **Docker + Coolify (recommended):** see [docs/deploy-coolify.md](docs/deploy-coolify.md). It uses the `Dockerfile` and `docker-compose.yml` in this repository and adds a CI-gated deploy and scheduled backups.
+- **Bare VPS with PM2 + Nginx:** see [deploy.md](deploy.md).
+
+Any Docker host works too:
+
+```bash
+docker build -t html-to-img .
+docker run -d --name html-to-img -p 3003:3003 -v hti-data:/app/data html-to-img
+docker exec html-to-img node --disable-warning=ExperimentalWarning scripts/create-admin.js --email you@example.com
+```
+
+Back up the database with `npm run backup-db` (or `node scripts/backup-db.js` inside the container).
 
 ## Migrating from v1
 
