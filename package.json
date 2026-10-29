@@ -18,6 +18,7 @@
     "build": "npm run build -w web",
     "start": "npm start -w server",
     "test": "npm test -w server",
-    "create-admin": "npm run create-admin -w server --"
+    "create-admin": "npm run create-admin -w server --",
+    "backup-db": "npm run backup-db -w server --"
   }
 }
