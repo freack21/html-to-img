@@ -1,0 +1,33 @@
+# Deploy with Coolify's "Docker Compose" build pack (see docs/deploy-coolify.md).
+# Coolify replaces SERVICE_URL_APP_3003 with the domain it routes to port 3003 of this service.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Switch to e.g. mirror.gcr.io/library/node:22-bookworm-slim if Docker Hub rate-limits the server.
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
+    restart: unless-stopped
+    init: true
+    expose:
+      - "3003"
+    environment:
+      SERVICE_URL_APP_3003: /
+      PUBLIC_URL: ${SERVICE_URL_APP_3003}
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3003
+      DATA_DIR: /app/data
+      # Coolify's Traefik proxy reaches the container over a private Docker network.
+      TRUST_PROXY: ${TRUST_PROXY:-loopback, uniquelocal}
+      MAX_IMAGE_BYTES: ${MAX_IMAGE_BYTES:-5242880}
+      IMAGE_TIMEOUT_MS: ${IMAGE_TIMEOUT_MS:-5000}
+      EMOJI_BASE_URL: ${EMOJI_BASE_URL:-https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/}
+    volumes:
+      # SQLite database (app.db) and rendered files (storage/). Must persist across deploys.
+      - hti-data:/app/data
+    # Health check (GET /healthz) is defined in the Dockerfile and inherited here.
+
+volumes:
+  hti-data:
