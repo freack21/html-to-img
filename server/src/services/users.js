@@ -64,6 +64,17 @@ export async function createUser(db, input, { role = "user" } = {}) {
   return getUser(db, lastInsertRowid);
 }
 
+/**
+ * Creates the first admin from environment variables (ADMIN_EMAIL / ADMIN_PASSWORD) so a
+ * container deployment needs no shell access. Never modifies an existing account.
+ * @returns the created user, or null when nothing was done
+ */
+export async function ensureAdmin(db, { email, password, name }) {
+  if (!email || !password) return null;
+  if (db.prepare("SELECT 1 FROM users WHERE email = ?").get(email.trim().toLowerCase())) return null;
+  return createUser(db, { email, password, name: name || "Admin" }, { role: "admin" });
+}
+
 /** Returns the user for valid credentials, or throws 401 without revealing which part was wrong. */
 export async function verifyCredentials(db, input) {
   const data = parse(loginSchema, input);

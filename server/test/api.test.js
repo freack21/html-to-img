@@ -11,6 +11,7 @@ import { createRenderer } from "../src/engine/index.js";
 import { cleanupExpired } from "../src/services/renders.js";
 import { updateSettings } from "../src/services/settings.js";
 import { createStorage } from "../src/services/storage.js";
+import { ensureAdmin } from "../src/services/users.js";
 
 const silentLogger = { error() {} };
 
@@ -121,6 +122,18 @@ describe("guest rendering", () => {
     const thumb = await api.get("/api/v1/templates/qc/thumbnail.png");
     assert.ok(isPng(thumb.data));
   });
+});
+
+test("ensureAdmin creates the env admin once and never overwrites it", async () => {
+  const input = { email: "Boot@Example.com", password: "bootstrap-pass-1", name: "Boot" };
+  assert.equal(await ensureAdmin(ctx.db, { email: "", password: "" }), null);
+  const created = await ensureAdmin(ctx.db, input);
+  assert.equal(created.role, "admin");
+  assert.equal(created.email, "boot@example.com");
+  assert.equal(await ensureAdmin(ctx.db, { ...input, password: "different-pass-2" }), null);
+  const login = await client(ctx.base).post("/api/v1/auth/login", { email: input.email, password: input.password });
+  assert.equal(login.status, 200);
+  await assert.rejects(ensureAdmin(ctx.db, { email: "x@example.com", password: "short" }), { status: 422 });
 });
 
 test("health check reports ok", async () => {

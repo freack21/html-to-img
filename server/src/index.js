@@ -4,6 +4,7 @@ import { openDatabase } from "./db/index.js";
 import { seed } from "./db/seed.js";
 import { createRenderer } from "./engine/index.js";
 import { cleanupExpired } from "./services/renders.js";
+import { ensureAdmin } from "./services/users.js";
 import { createStorage } from "./services/storage.js";
 
 const CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
@@ -11,6 +12,18 @@ const CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 const config = loadConfig();
 const db = openDatabase(config.databasePath);
 seed(db, { templatesDir: config.templatesDir });
+
+try {
+  const admin = await ensureAdmin(db, {
+    email: process.env.ADMIN_EMAIL,
+    password: process.env.ADMIN_PASSWORD,
+    name: process.env.ADMIN_NAME,
+  });
+  if (admin) console.log(`Created admin account ${admin.email} from ADMIN_EMAIL`);
+} catch (err) {
+  // Keep serving; a bad ADMIN_* value should not take the site down.
+  console.error("Could not create admin from ADMIN_EMAIL/ADMIN_PASSWORD:", err.message, err.details ?? "");
+}
 
 const storage = createStorage(config.storageDir);
 const renderer = createRenderer({ images: config.images, emojiBaseUrl: config.emojiBaseUrl });

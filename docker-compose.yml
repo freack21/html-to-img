@@ -24,6 +24,10 @@ services:
       MAX_IMAGE_BYTES: ${MAX_IMAGE_BYTES:-5242880}
       IMAGE_TIMEOUT_MS: ${IMAGE_TIMEOUT_MS:-5000}
       EMOJI_BASE_URL: ${EMOJI_BASE_URL:-https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/}
+      # First admin, created on boot only if that email has no account yet.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
     volumes:
       # SQLite database (app.db) and rendered files (storage/). Must persist across deploys.
       - hti-data:/app/data
