@@ -27,7 +27,7 @@ const DONE_STATUSES = new Set(["finished", "failed", "cancelled-by-user", "cance
 
 export class ProvisionError extends Error {}
 
-function createClient({ baseUrl, token, fetchImpl }) {
+function createClient({ baseUrl, token, fetchImpl, sourceHint }) {
   const root = `${baseUrl.replace(/\/+$/, "")}/api/v1`;
   return async function request(method, path, body) {
     let res;
@@ -53,8 +53,12 @@ function createClient({ baseUrl, token, fetchImpl }) {
     }
     if (res.status === 401) throw new ProvisionError("Coolify rejected the API token (401). Create a new token and try again.");
     if (res.status === 403) {
+      const reason = typeof data === "object" && data?.message ? ` Coolify says: "${data.message}".` : "";
+      const network = sourceHint
+        ? ` Requests from this script reach Coolify through the Docker network ${sourceHint}, so Allowed IPs must include it (or be left empty).`
+        : "";
       throw new ProvisionError(
-        "Coolify refused the request (403). Enable Settings > Advanced > API access, check the Allowed API IPs list, and use a token with the root permission.",
+        `Coolify refused the request (403).${reason} Check Settings > Advanced: API access must be Enabled and Allowed IPs must include the caller.${network} The token needs the root permission.`,
       );
     }
     if (!res.ok) {
@@ -82,7 +86,7 @@ const normalizeRepo = (url) => String(url || "").replace(/\.git$/, "").replace(/
  */
 export async function provision(env, { fetchImpl = fetch, log = console.log, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), pollMs = 5000, timeoutMs = 20 * 60 * 1000 } = {}) {
   if (!env.COOLIFY_URL || !env.COOLIFY_TOKEN) throw new ProvisionError("COOLIFY_URL and COOLIFY_TOKEN are required.");
-  const request = createClient({ baseUrl: env.COOLIFY_URL, token: env.COOLIFY_TOKEN, fetchImpl });
+  const request = createClient({ baseUrl: env.COOLIFY_URL, token: env.COOLIFY_TOKEN, fetchImpl, sourceHint: env.COOLIFY_SOURCE_HINT });
   const repo = env.GIT_REPOSITORY || "https://github.com/freack21/html-to-img";
   const branch = env.GIT_BRANCH || "main";
   const projectName = env.PROJECT_NAME || "html-to-img";

@@ -100,7 +100,11 @@ test("a failed deployment is reported", async () => {
 
 test("API access errors explain how to fix them", async () => {
   const { fetchImpl } = fakeCoolify({ status: 403 });
-  await assert.rejects(provision(base, { fetchImpl, ...quiet }), /Enable Settings > Advanced > API access/);
+  await assert.rejects(provision(base, { fetchImpl, ...quiet }), /API access must be Enabled.*Coolify says: "nope"|Coolify says: "nope".*API access must be Enabled/);
+  await assert.rejects(
+    provision({ ...base, COOLIFY_SOURCE_HINT: "10.0.0.0/8" }, { fetchImpl, ...quiet }),
+    /Docker network 10\.0\.0\.0\/8, so Allowed IPs must include it/,
+  );
   await assert.rejects(provision({ COOLIFY_URL: "", COOLIFY_TOKEN: "" }, quiet), /required/);
   const offline = async () => {
     throw Object.assign(new TypeError("fetch failed"), { cause: { code: "ECONNREFUSED" } });

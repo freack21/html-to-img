@@ -179,23 +179,26 @@ deploy() {
     fi
   fi
 
-  local workdir node_image
-  workdir=$(mktemp -d)
-  trap 'rm -rf "$workdir"' EXIT
-  curl -fsSL "$REPO_RAW/$BRANCH/deploy/coolify/provision.mjs" -o "$workdir/provision.mjs" || die "Could not download provision.mjs for branch $BRANCH."
+  local node_image
+  # Global (not local): the EXIT trap runs after this function has returned.
+  WORKDIR=$(mktemp -d)
+  trap 'rm -rf "${WORKDIR:-}"' EXIT
+  curl -fsSL "$REPO_RAW/$BRANCH/deploy/coolify/provision.mjs" -o "$WORKDIR/provision.mjs" || die "Could not download provision.mjs for branch $BRANCH."
 
   node_image="node:22-alpine"
   docker image inspect "$node_image" >/dev/null 2>&1 || docker pull -q "$node_image" >/dev/null 2>&1 \
     || { node_image="mirror.gcr.io/library/node:22-alpine"; docker pull -q "$node_image" >/dev/null; }
 
-  export COOLIFY_TOKEN ADMIN_EMAIL
+  # The API call goes through docker-proxy, so Coolify sees the "coolify" network's gateway as the caller.
+  COOLIFY_SOURCE_HINT=$(docker network inspect coolify --format '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null | xargs | tr ' ' ',')
+  export COOLIFY_TOKEN ADMIN_EMAIL COOLIFY_SOURCE_HINT
   export COOLIFY_URL="http://127.0.0.1:8000" APP_DOMAIN="$domain" GIT_BRANCH="$BRANCH"
   export NODE_IMAGE=""
   [[ "${mirror:-}" =~ ^[Yy]$ ]] && NODE_IMAGE="mirror.gcr.io/library/node:22-bookworm-slim"
 
   # Values are passed by name (-e VAR), so the token never appears in the process list.
-  docker run --rm --network host -v "$workdir:/w:ro" \
-    -e COOLIFY_URL -e COOLIFY_TOKEN -e APP_DOMAIN -e ADMIN_EMAIL -e GIT_BRANCH -e NODE_IMAGE \
+  docker run --rm --network host -v "$WORKDIR:/w:ro" \
+    -e COOLIFY_URL -e COOLIFY_TOKEN -e APP_DOMAIN -e ADMIN_EMAIL -e GIT_BRANCH -e NODE_IMAGE -e COOLIFY_SOURCE_HINT \
     "$node_image" node /w/provision.mjs
   echo "  (In the webhook URL above, <your Coolify URL> is http://${ip}:8000 or your Coolify domain.)"
 }
