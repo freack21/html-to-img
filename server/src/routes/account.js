@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { readCookie, requireUser, SESSION_COOKIE, sessionCookieOptions } from "../auth/middleware.js";
-import { clientKey } from "../lib/client.js";
+import { clientId } from "../lib/client.js";
 import { HttpError } from "../lib/errors.js";
 import { rateLimit } from "../lib/rate-limit.js";
 import { listPlans } from "../services/plans.js";
@@ -42,7 +42,7 @@ export function accountRoutes({ db, config }) {
     return {
       user: principal?.user ?? null,
       plan: principal?.plan ?? null,
-      usage: usageFor(db, principal, clientKey(req.ip), settings),
+      usage: usageFor(db, principal, clientId(req), settings),
       limits: policyFor(principal, settings),
       registrationOpen: settings.registrationOpen,
     };

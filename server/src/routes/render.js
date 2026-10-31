@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomId } from "../auth/crypto.js";
 import { parseDefinition } from "../engine/index.js";
-import { clientKey } from "../lib/client.js";
+import { clientId } from "../lib/client.js";
 import { HttpError } from "../lib/errors.js";
 import { rateLimit } from "../lib/rate-limit.js";
 import { policyFor, recordRender, usageFor } from "../services/renders.js";
@@ -92,7 +92,7 @@ export function renderRoutes({ db, config, renderer, storage }) {
       throw new HttpError(403, `Maximum scale for your plan is ${policy.maxScale}`, { code: "scale_not_allowed" });
     }
 
-    const client = clientKey(req.ip);
+    const client = clientId(req);
     const usage = usageFor(db, principal, client, settings);
     setQuotaHeaders(res, usage);
     if (usage.limit !== null && usage.used >= usage.limit) {

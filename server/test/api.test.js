@@ -136,6 +136,17 @@ test("ensureAdmin creates the env admin once and never overwrites it", async () 
   await assert.rejects(ensureAdmin(ctx.db, { email: "x@example.com", password: "short" }), { status: 422 });
 });
 
+test("guests behind Cloudflare get their own quota; direct spoofing is ignored", async () => {
+  const viaCloudflare = (visitor) => ({ headers: { "x-forwarded-for": "173.245.48.5", "cf-connecting-ip": visitor } });
+  const remaining = async (opts) => Number((await client(ctx.base).get("/api/v1/render?template=qc", opts)).headers.get("x-quota-remaining"));
+  const first = await remaining(viaCloudflare("198.51.100.1"));
+  assert.equal(await remaining(viaCloudflare("198.51.100.2")), first, "a different visitor starts fresh");
+  assert.equal(await remaining(viaCloudflare("198.51.100.1")), first - 1, "the same visitor is counted");
+
+  const direct = await remaining({ headers: { "cf-connecting-ip": "198.51.100.3" } });
+  assert.equal(await remaining({ headers: { "cf-connecting-ip": "198.51.100.4" } }), direct - 1, "header ignored without Cloudflare");
+});
+
 test("health check reports ok", async () => {
   const res = await client(ctx.base).get("/healthz");
   assert.equal(res.status, 200);

@@ -8,7 +8,7 @@ import { buildElement, evaluateCondition, resolveValue } from "../src/engine/bui
 import { emojiCode } from "../src/engine/emoji.js";
 import { createImageLoader, isBlockedAddress, sniffImage } from "../src/engine/images.js";
 import { resolveParams } from "../src/engine/params.js";
-import { clientKey } from "../src/lib/client.js";
+import { clientIp, clientKey, isCloudflare } from "../src/lib/client.js";
 
 const TEMPLATES_DIR = path.join(import.meta.dirname, "../templates");
 const PNG_1PX = Buffer.from(
@@ -197,4 +197,15 @@ test("client keys group IPv6 clients by /64", () => {
   assert.equal(clientKey("2001:db8:1:2:bbbb:cccc:dddd:eeee"), "2001:db8:1:2::/64");
   assert.equal(clientKey("2001:db8::1"), "2001:db8:0:0::/64");
   assert.equal(clientKey("::1"), "0:0:0:0::/64");
+});
+
+test("CF-Connecting-IP is trusted only when the request came from Cloudflare", () => {
+  const req = (ip, header) => ({ ip, get: (name) => (name === "cf-connecting-ip" ? header : undefined) });
+  assert.equal(isCloudflare("173.245.48.5"), true);
+  assert.equal(isCloudflare("::ffff:104.16.1.1"), true);
+  assert.equal(isCloudflare("2606:4700::1"), true);
+  assert.equal(isCloudflare("8.8.8.8"), false);
+  assert.equal(clientIp(req("173.245.48.5", "203.0.113.7")), "203.0.113.7");
+  assert.equal(clientIp(req("8.8.8.8", "203.0.113.7")), "8.8.8.8", "spoofed header from a non-Cloudflare peer");
+  assert.equal(clientIp(req("173.245.48.5", "not-an-ip")), "173.245.48.5");
 });

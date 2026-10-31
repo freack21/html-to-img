@@ -1,11 +1,11 @@
-import { clientKey } from "./client.js";
+import { clientId } from "./client.js";
 import { HttpError } from "./errors.js";
 
 /**
  * Fixed-window in-memory rate limiter. State is per process, which fits the
  * single-instance PM2 deployment; use a shared store before scaling out.
  */
-export function rateLimit({ windowMs, max, key = (req) => clientKey(req.ip), message = "Too many requests" }) {
+export function rateLimit({ windowMs, max, key = clientId, message = "Too many requests" }) {
   const hits = new Map();
   const timer = setInterval(() => {
     const cutoff = Date.now() - windowMs;
