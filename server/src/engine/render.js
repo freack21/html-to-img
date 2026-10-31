@@ -15,11 +15,12 @@ export const FORMATS = {
 };
 export const MAX_OUTPUT_PIXELS = 4800 * 4800;
 
-function watermarked(element, text) {
+/** Wraps the template in a box that fills the canvas, so `height: 100%` roots keep working. */
+function watermarked(element, text, fixedHeight) {
   return {
     type: "div",
     props: {
-      style: { display: "flex", position: "relative" },
+      style: { display: "flex", position: "relative", width: "100%", ...(fixedHeight && { height: "100%" }) },
       children: [
         element,
         {
@@ -57,7 +58,7 @@ export function createRenderer({ images = {}, emojiBaseUrl } = {}) {
     if (!FORMATS[format]) throw new ValidationError(`Unsupported format "${format}"`);
     const params = resolveParams(definition.params, input);
     let element = buildElement(definition, params);
-    if (watermark) element = watermarked(element, watermark);
+    if (watermark) element = watermarked(element, watermark, Boolean(definition.height));
 
     const families = new Set();
     const pending = [];

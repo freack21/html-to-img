@@ -209,3 +209,18 @@ test("CF-Connecting-IP is trusted only when the request came from Cloudflare", (
   assert.equal(clientIp(req("8.8.8.8", "203.0.113.7")), "8.8.8.8", "spoofed header from a non-Cloudflare peer");
   assert.equal(clientIp(req("173.245.48.5", "not-an-ip")), "173.245.48.5");
 });
+
+test("watermarking keeps full-height templates filling the canvas", async () => {
+  const def = parseDefinition({
+    width: 100,
+    height: 100,
+    root: { type: "box", style: { width: "100%", height: "100%", backgroundColor: "#ff0000" } },
+  });
+  const { Resvg } = await import("@resvg/resvg-js");
+  for (const watermark of [null, "wm"]) {
+    const { buffer } = await render(def, {}, { format: "svg", watermark });
+    const pixels = new Resvg(buffer.toString()).render().pixels;
+    const alphaAt = (x, y) => pixels[(y * 100 + x) * 4 + 3];
+    assert.equal(alphaAt(5, 95), 255, `bottom-left pixel is opaque (watermark: ${watermark})`);
+  }
+});
