@@ -179,11 +179,18 @@ deploy() {
     fi
   fi
 
-  local node_image
+  local node_image ref
   # Global (not local): the EXIT trap runs after this function has returned.
   WORKDIR=$(mktemp -d)
   trap 'rm -rf "${WORKDIR:-}"' EXIT
-  curl -fsSL "$REPO_RAW/$BRANCH/deploy/coolify/provision.mjs?t=$(date +%s)" -o "$WORKDIR/provision.mjs" || die "Could not download provision.mjs for branch $BRANCH."
+  # raw.githubusercontent.com caches branch URLs for minutes (query strings don't bypass it),
+  # so fetch the provisioner from the branch's current commit, whose URL is immutable.
+  ref=$(curl -fsSL --max-time 10 -H "Accept: application/vnd.github.sha" \
+    "https://api.github.com/repos/freack21/html-to-img/commits/$BRANCH" 2>/dev/null || true)
+  [[ "$ref" =~ ^[0-9a-f]{40}$ ]] || ref="$BRANCH"
+  curl -fsSL "$REPO_RAW/$ref/deploy/coolify/provision.mjs" -o "$WORKDIR/provision.mjs" \
+    || die "Could not download provision.mjs for branch $BRANCH."
+  echo "  provisioner: $BRANCH @ ${ref:0:7}"
 
   node_image="node:22-alpine"
   docker image inspect "$node_image" >/dev/null 2>&1 || docker pull -q "$node_image" >/dev/null 2>&1 \
