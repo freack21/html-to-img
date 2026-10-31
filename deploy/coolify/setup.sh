@@ -183,7 +183,7 @@ deploy() {
   # Global (not local): the EXIT trap runs after this function has returned.
   WORKDIR=$(mktemp -d)
   trap 'rm -rf "${WORKDIR:-}"' EXIT
-  curl -fsSL "$REPO_RAW/$BRANCH/deploy/coolify/provision.mjs" -o "$WORKDIR/provision.mjs" || die "Could not download provision.mjs for branch $BRANCH."
+  curl -fsSL "$REPO_RAW/$BRANCH/deploy/coolify/provision.mjs?t=$(date +%s)" -o "$WORKDIR/provision.mjs" || die "Could not download provision.mjs for branch $BRANCH."
 
   node_image="node:22-alpine"
   docker image inspect "$node_image" >/dev/null 2>&1 || docker pull -q "$node_image" >/dev/null 2>&1 \
