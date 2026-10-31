@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation } from "react-router";
 import Layout from "./components/Layout.jsx";
-import { ConfirmProvider, Spinner } from "./components/ui.jsx";
+import { ConfirmProvider, EmptyState, Spinner, ToastProvider } from "./components/ui.jsx";
 import { AuthProvider, useAuth } from "./lib/auth.jsx";
 import { ThemeProvider } from "./lib/theme.jsx";
 import AdminLayout from "./pages/admin/AdminLayout.jsx";
@@ -15,6 +15,7 @@ import AdminUsers from "./pages/admin/Users.jsx";
 import { Login, Register } from "./pages/Auth.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Docs from "./pages/Docs.jsx";
+import Landing from "./pages/Landing.jsx";
 import Pricing from "./pages/Pricing.jsx";
 import Studio from "./pages/Studio.jsx";
 import "./index.css";
@@ -22,56 +23,77 @@ import "./index.css";
 function RequireAuth({ admin = false }) {
   const { loading, user, isAdmin } = useAuth();
   const location = useLocation();
-  if (loading) return <Spinner />;
+  if (loading) {
+    return (
+      <div className="grid place-items-center py-24 text-zinc-400">
+        <Spinner />
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (admin && !isAdmin) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
 
+/** "/" is the landing page; old studio links (/?t=slug) keep working. */
+function Home() {
+  const { search } = useLocation();
+  if (new URLSearchParams(search).has("t")) return <Navigate to={`/studio${search}`} replace />;
+  return <Landing />;
+}
+
 function NotFound() {
   return (
-    <div className="py-24 text-center">
-      <p className="text-5xl font-semibold">404</p>
-      <p className="mt-2 text-zinc-500">This page does not exist.</p>
-      <Link to="/" className="mt-4 inline-block text-violet-600 hover:underline">
-        Back to the studio
-      </Link>
-    </div>
+    <EmptyState
+      icon="search"
+      title="Page not found"
+      description="The page you are looking for doesn't exist or has moved."
+      action={
+        <Link to="/" className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500">
+          Back home
+        </Link>
+      }
+    />
   );
 }
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThemeProvider>
-      <ConfirmProvider>
-        <BrowserRouter>
-          <AuthProvider>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route index element={<Studio />} />
-            <Route path="pricing" element={<Pricing />} />
-            <Route path="docs" element={<Docs />} />
-            <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
-            <Route element={<RequireAuth />}>
-              <Route path="dashboard" element={<Dashboard />} />
-            </Route>
-            <Route element={<RequireAuth admin />}>
-              <Route path="admin" element={<AdminLayout />}>
-                <Route index element={<AdminOverview />} />
-                <Route path="templates" element={<AdminTemplates />} />
-                <Route path="templates/:id" element={<TemplateEditor />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="plans" element={<AdminPlans />} />
-                <Route path="settings" element={<AdminSettings />} />
-              </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </ConfirmProvider>
+      <ToastProvider>
+        <ConfirmProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                <Route element={<Layout fullBleed />}>
+                  <Route path="studio" element={<Studio />} />
+                </Route>
+                <Route element={<Layout />}>
+                  <Route index element={<Home />} />
+                  <Route path="pricing" element={<Pricing />} />
+                  <Route path="docs" element={<Docs />} />
+                  <Route path="login" element={<Login />} />
+                  <Route path="register" element={<Register />} />
+                  <Route element={<RequireAuth />}>
+                    <Route path="dashboard" element={<Dashboard />} />
+                  </Route>
+                  <Route element={<RequireAuth admin />}>
+                    <Route path="admin" element={<AdminLayout />}>
+                      <Route index element={<AdminOverview />} />
+                      <Route path="templates" element={<AdminTemplates />} />
+                      <Route path="templates/:id" element={<TemplateEditor />} />
+                      <Route path="users" element={<AdminUsers />} />
+                      <Route path="plans" element={<AdminPlans />} />
+                      <Route path="settings" element={<AdminSettings />} />
+                    </Route>
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
+        </ConfirmProvider>
+      </ToastProvider>
     </ThemeProvider>
   </StrictMode>,
 );

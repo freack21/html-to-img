@@ -1,42 +1,58 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Alert, Badge, Button, Card, CopyButton, Field, Input, PageHeader, PasswordInput, Tabs, UsageBar, useConfirm } from "../components/ui.jsx";
+import { Alert, Badge, Button, Card, CopyButton, EmptyState, Field, Icon, Input, PageHeader, PasswordInput, Tabs, UsageBar, useConfirm, useToast } from "../components/ui.jsx";
 import { api, formatBytes, formatDate, formatNumber, formatPrice } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 import { fieldErrors } from "../lib/usePreview.js";
 
+function StatCard({ icon, label, value, hint, children }) {
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2 text-sm text-zinc-500">
+        <span className="grid size-8 place-items-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+          <Icon name={icon} className="size-4" />
+        </span>
+        {label}
+      </div>
+      <p className="mt-4 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
+      {children}
+    </Card>
+  );
+}
+
 function Overview() {
   const { session } = useAuth();
   const { plan, usage, limits } = session;
+  const pct = usage.limit ? Math.round((usage.used / usage.limit) * 100) : 0;
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Card className="p-5 md:col-span-2">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Usage this month</h2>
-          <span className="text-xs text-zinc-500">Resets {formatDate(usage.resetsAt)}</span>
-        </div>
-        <p className="mt-3 text-3xl font-semibold">
-          {formatNumber(usage.used)}
-          <span className="text-base font-normal text-zinc-500"> / {formatNumber(usage.limit)} renders</span>
-        </p>
-        <div className="mt-3">
-          <UsageBar used={usage.used} limit={usage.limit} />
-        </div>
-      </Card>
-      <Card className="p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Plan</h2>
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon="image" label="Renders this month" value={formatNumber(usage.used)} hint={usage.limit === null ? "Unlimited plan" : `${pct}% of ${formatNumber(usage.limit)}`}>
+          <div className="mt-3">
+            <UsageBar used={usage.used} limit={usage.limit} />
+          </div>
+        </StatCard>
+        <StatCard icon="zap" label="Remaining" value={formatNumber(usage.remaining)} hint={`Resets ${formatDate(usage.resetsAt)}`} />
+        <StatCard icon="maximize" label="Max resolution" value={`${limits.maxScale}×`} hint={limits.premiumTemplates ? "Premium templates included" : "Standard templates"} />
+        <StatCard icon="history" label="Link retention" value={`${limits.retentionHours} h`} hint="Hosted image links expire after this" />
+      </div>
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
+        <div className="flex items-center gap-3">
           <Badge tone="violet">{plan.name}</Badge>
+          <p className="text-sm text-zinc-500">
+            {formatPrice(plan.price)}
+            {plan.price > 0 && " / month"} · {plan.description}
+          </p>
         </div>
-        <p className="mt-3 text-2xl font-semibold">{formatPrice(plan.price)}</p>
-        <ul className="mt-2 space-y-1 text-sm text-zinc-500">
-          <li>Up to {limits.maxScale}x scale</li>
-          <li>Links kept {limits.retentionHours} h</li>
-          <li>{limits.premiumTemplates ? "Premium templates included" : "Standard templates"}</li>
-        </ul>
-        <Link to="/pricing" className="mt-3 inline-block text-sm font-medium text-violet-600 hover:underline dark:text-violet-400">
-          Compare plans →
-        </Link>
+        <div className="flex gap-2">
+          <Link to="/studio" className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-violet-500">
+            <Icon name="layout" /> Open studio
+          </Link>
+          <Link to="/pricing" className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium ring-1 ring-zinc-300 hover:bg-zinc-50 dark:ring-zinc-700 dark:hover:bg-zinc-800">
+            Compare plans
+          </Link>
+        </div>
       </Card>
     </div>
   );
@@ -92,8 +108,17 @@ function History() {
             ))}
             {data.items.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-                  No renders yet. <Link to="/" className="text-violet-600 underline">Open the studio</Link>.
+                <td colSpan={5}>
+                  <EmptyState
+                    icon="image"
+                    title="No renders yet"
+                    description="Images you download or share from the studio or the API will show up here."
+                    action={
+                      <Link to="/studio" className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500">
+                        Open the studio
+                      </Link>
+                    }
+                  />
                 </td>
               </tr>
             )}
@@ -194,7 +219,7 @@ function ApiKeys() {
             </div>
           </div>
         ))}
-        {keys.length === 0 && <p className="px-5 py-6 text-center text-sm text-zinc-500">No API keys yet.</p>}
+        {keys.length === 0 && <EmptyState icon="key" title="No API keys yet" description="Create a key above to call the render API from your app or bot." />}
       </Card>
     </div>
   );
@@ -202,18 +227,17 @@ function ApiKeys() {
 
 function Account() {
   const { user, refresh } = useAuth();
+  const toast = useToast();
   const [name, setName] = useState(user.name);
   const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "" });
-  const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
   const submit = (action, success) => async (event) => {
     event.preventDefault();
-    setMessage(null);
     setError(null);
     try {
       await action();
-      setMessage(success);
+      toast({ title: success });
       refresh();
     } catch (err) {
       setError(err);
@@ -224,7 +248,6 @@ function Account() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="space-y-3 md:col-span-2">
-        {message && <Alert tone="green">{message}</Alert>}
         {error && !error.details.length && <Alert>{error.message}</Alert>}
       </div>
       <Card className="p-5">

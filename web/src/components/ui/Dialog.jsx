@@ -5,12 +5,11 @@ import { Button } from "./primitives.jsx";
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** Modal dialog: focus is moved in and trapped, Escape/backdrop closes, focus returns on close. */
-export function Dialog({ open, onClose, title, description, children, footer, tone }) {
-  const panelRef = useRef(null);
-  const titleId = useId();
-  const descriptionId = useId();
-
+/**
+ * Shared modal behaviour: locks page scroll, moves focus into `panelRef`, traps Tab,
+ * closes on Escape and returns focus to the previously focused element.
+ */
+export function useModal(panelRef, open, onClose) {
   useEffect(() => {
     if (!open) return undefined;
     const previous = document.activeElement;
@@ -43,7 +42,15 @@ export function Dialog({ open, onClose, title, description, children, footer, to
       document.body.style.overflow = overflow;
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open, onClose, panelRef]);
+}
+
+/** Modal dialog: focus is moved in and trapped, Escape/backdrop closes, focus returns on close. */
+export function Dialog({ open, onClose, title, description, children, footer, tone }) {
+  const panelRef = useRef(null);
+  const titleId = useId();
+  const descriptionId = useId();
+  useModal(panelRef, open, onClose);
 
   if (!open) return null;
   return createPortal(

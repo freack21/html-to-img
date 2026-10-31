@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import ParamForm, { defaultValues } from "../../components/ParamForm.jsx";
-import { Alert, Button, Card, Disclosure, Field, Input, PageHeader, Spinner, Textarea, Toggle, cx } from "../../components/ui.jsx";
+import { Alert, Button, Card, Disclosure, Field, Input, PageHeader, Spinner, Textarea, Toggle, cx, useToast } from "../../components/ui.jsx";
 import { api } from "../../lib/api.js";
 import { usePreview } from "../../lib/usePreview.js";
 
@@ -59,7 +59,7 @@ export default function TemplateEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     api("/admin/fonts").then(setFonts).catch(() => {});
@@ -106,7 +106,6 @@ export default function TemplateEditor() {
     if (!parsed.definition) return;
     setSaving(true);
     setError(null);
-    setSaved(false);
     try {
       const body = { ...meta, definition: parsed.definition };
       if (isNew) {
@@ -115,7 +114,7 @@ export default function TemplateEditor() {
       } else {
         await api(`/admin/templates/${id}`, { method: "PATCH", body });
       }
-      setSaved(true);
+      toast({ title: "Saved. The template is live." });
     } catch (err) {
       setError(err);
     } finally {
@@ -138,7 +137,6 @@ export default function TemplateEditor() {
           </Button>
         }
       />
-      {saved && <Alert tone="green">Saved. The template is live.</Alert>}
       {error && (
         <Alert>
           {error.message}

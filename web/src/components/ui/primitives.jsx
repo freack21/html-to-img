@@ -179,3 +179,22 @@ export function CopyButton({ text, label = "Copy" }) {
     </Button>
   );
 }
+
+/** Loading placeholder with the size of the content it stands in for. */
+export function Skeleton({ className }) {
+  return <div aria-hidden="true" className={cx("animate-pulse rounded-lg bg-zinc-200/80 dark:bg-zinc-800", className)} />;
+}
+
+/** Friendly placeholder for empty lists and first-run states. */
+export function EmptyState({ icon = "sparkles", title, description, action }) {
+  return (
+    <div className="flex flex-col items-center px-6 py-12 text-center">
+      <div className="grid size-12 place-items-center rounded-2xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+        <Icon name={icon} className="size-6" />
+      </div>
+      <p className="mt-4 font-medium">{title}</p>
+      {description && <p className="mt-1 max-w-sm text-sm text-zinc-500">{description}</p>}
+      {action && <div className="mt-5">{action}</div>}
+    </div>
+  );
+}

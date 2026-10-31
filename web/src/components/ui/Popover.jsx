@@ -64,7 +64,7 @@ export function Popover({ open, onClose, anchorRef, children, matchWidth = false
   return createPortal(
     <div
       ref={panelRef}
-      className={cx("fixed z-50", PANEL, !position && "invisible", className)}
+      className={cx("animate-pop-in fixed z-50", PANEL, !position && "invisible", className)}
       style={position ?? { top: 0, left: 0 }}
       {...props}
     >

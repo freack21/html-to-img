@@ -1,27 +1,53 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { Logo } from "../components/Layout.jsx";
-import { Alert, Button, Card, Field, Input, PasswordInput } from "../components/ui.jsx";
+import { Alert, Button, Field, Icon, Input, PasswordInput } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.jsx";
 import { fieldErrors } from "../lib/usePreview.js";
 
+const PERKS = [
+  ["sparkles", "13 ready-made templates, plus your own"],
+  ["zap", "Fast rendering to PNG, JPEG and SVG"],
+  ["key", "API keys and a usage dashboard"],
+];
+
 function AuthCard({ title, subtitle, children }) {
   return (
-    <div className="mx-auto max-w-sm py-8">
-      <div className="mb-6 flex justify-center">
+    <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl ring-1 shadow-zinc-900/5 ring-zinc-200 md:grid-cols-2 dark:bg-zinc-900 dark:shadow-black/30 dark:ring-zinc-800">
+      <div className="relative isolate hidden flex-col justify-between overflow-hidden bg-zinc-950 p-10 text-white md:flex">
+        <div aria-hidden="true" className="absolute -top-24 -left-24 -z-10 size-80 rounded-full bg-violet-600/50 blur-3xl" />
+        <div aria-hidden="true" className="absolute -right-24 -bottom-24 -z-10 size-80 rounded-full bg-fuchsia-600/30 blur-3xl" />
         <Logo />
+        <div>
+          <p className="text-2xl font-semibold tracking-tight">Design once. Render thousands.</p>
+          <ul className="mt-6 space-y-3 text-sm text-zinc-300">
+            {PERKS.map(([icon, text]) => (
+              <li key={text} className="flex items-center gap-3">
+                <span className="grid size-8 place-items-center rounded-lg bg-white/10">
+                  <Icon name={icon} className="size-4" />
+                </span>
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <img src="/api/v1/templates/qc/thumbnail.png" alt="" className="w-64 opacity-90" />
       </div>
-      <Card className="p-6">
-        <h1 className="text-xl font-semibold">{title}</h1>
-        <p className="mt-1 mb-6 text-sm text-zinc-500">{subtitle}</p>
+      <div className="p-8 sm:p-10">
+        <div className="mb-8 md:hidden">
+          <Logo />
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <p className="mt-1 mb-8 text-sm text-zinc-500">{subtitle}</p>
         {children}
-      </Card>
+      </div>
     </div>
   );
 }
 
 function useAuthForm(action, initial) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState(initial);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -32,7 +58,8 @@ function useAuthForm(action, initial) {
     setError(null);
     try {
       await action(form);
-      navigate("/dashboard");
+      // Return to the page that required login, if any.
+      navigate(location.state?.from || "/dashboard", { replace: true });
     } catch (err) {
       setError(err);
     } finally {

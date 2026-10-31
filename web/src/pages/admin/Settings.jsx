@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Alert, Button, Card, Field, Input, NumberInput, PageHeader, Spinner, Toggle } from "../../components/ui.jsx";
+import { Alert, Button, Card, Field, Input, NumberInput, PageHeader, Spinner, Toggle, useToast } from "../../components/ui.jsx";
 import { api } from "../../lib/api.js";
 import { fieldErrors } from "../../lib/usePreview.js";
 
 export default function Settings() {
   const [form, setForm] = useState(null);
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -21,10 +21,9 @@ export default function Settings() {
     event.preventDefault();
     setSaving(true);
     setError(null);
-    setSaved(false);
     try {
       setForm(await api("/admin/settings", { method: "PATCH", body: form }));
-      setSaved(true);
+      toast({ title: "Settings saved." });
     } catch (err) {
       setError(err);
     } finally {
@@ -36,7 +35,6 @@ export default function Settings() {
     <div>
       <PageHeader title="Settings" description="Guest mode and global behaviour." />
       <form onSubmit={save} noValidate className="max-w-2xl space-y-4">
-        {saved && <Alert tone="green">Settings saved.</Alert>}
         {error && !error.details.length && <Alert>{error.message}</Alert>}
         <Card className="space-y-4 p-5">
           <h2 className="font-semibold">Accounts</h2>

@@ -5,7 +5,7 @@ import { cx } from "./utils.js";
  * Tab list with roving focus (←/→, Home/End). Render the active panel yourself, e.g.
  * <Tabs tabs={[{ id, label }]} value={tab} onChange={setTab} />.
  */
-export function Tabs({ tabs, value, onChange, className, "aria-label": ariaLabel }) {
+export function Tabs({ tabs, value, onChange, bordered = true, className, "aria-label": ariaLabel }) {
   const refs = useRef({});
   const move = (event, index) => {
     const keys = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1 };
@@ -16,7 +16,7 @@ export function Tabs({ tabs, value, onChange, className, "aria-label": ariaLabel
     refs.current[next.id]?.focus();
   };
   return (
-    <div role="tablist" aria-label={ariaLabel} className={cx("flex gap-1 overflow-x-auto border-b border-zinc-200 dark:border-zinc-800", className)}>
+    <div role="tablist" aria-label={ariaLabel} className={cx("flex gap-1 overflow-x-auto", bordered && "border-b border-zinc-200 dark:border-zinc-800", className)}>
       {tabs.map((tab, index) => {
         const selected = tab.id === value;
         return (

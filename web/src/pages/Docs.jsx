@@ -1,16 +1,74 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Badge, Card, PageHeader } from "../components/ui.jsx";
+import { Badge, Card, CopyButton, PageHeader, cx } from "../components/ui.jsx";
 import { api } from "../lib/api.js";
 
 function Code({ children }) {
-  return <pre className="overflow-x-auto rounded-lg bg-zinc-900 p-4 text-xs leading-relaxed text-zinc-100">{children}</pre>;
+  return (
+    <div className="group relative">
+      <pre className="overflow-x-auto rounded-xl bg-zinc-950 p-4 pr-20 text-xs leading-relaxed text-zinc-100 ring-1 ring-zinc-800">{children}</pre>
+      {typeof children === "string" && (
+        <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <CopyButton text={children} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+const SECTIONS = [
+  ["auth", "Authentication"],
+  ["render", "Render an image"],
+  ["templates", "Templates"],
+  ["errors", "Errors"],
+];
+
+/** Sticky table of contents that highlights the section in view. */
+function Toc() {
+  const [active, setActive] = useState(SECTIONS[0][0]);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: "-80px 0px -60% 0px" },
+    );
+    SECTIONS.forEach(([id]) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <nav aria-label="On this page" className="sticky top-24 hidden self-start lg:block">
+      <p className="mb-3 text-xs font-semibold tracking-wide text-zinc-400 uppercase">On this page</p>
+      <ul className="space-y-1 border-l border-zinc-200 text-sm dark:border-zinc-800">
+        {SECTIONS.map(([id, label]) => (
+          <li key={id}>
+            <a
+              href={`#${id}`}
+              aria-current={active === id ? "location" : undefined}
+              className={cx(
+                "-ml-px block border-l-2 py-1 pl-4 transition-colors",
+                active === id
+                  ? "border-violet-600 font-medium text-violet-700 dark:border-violet-400 dark:text-violet-300"
+                  : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
+              )}
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 }
 
 function Section({ id, title, children }) {
   return (
     <section id={id} className="scroll-mt-20 space-y-3">
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       {children}
     </section>
   );
@@ -34,7 +92,9 @@ export default function Docs() {
   }, []);
 
   return (
-    <div className="max-w-4xl space-y-10">
+    <div className="grid gap-12 lg:grid-cols-[12rem_minmax(0,1fr)]">
+      <Toc />
+      <div className="max-w-3xl min-w-0 space-y-12">
       <PageHeader title="API documentation" description="Version 1 · base URL /api/v1 · JSON in, image or JSON out." />
 
       <Section id="auth" title="Authentication">
@@ -116,7 +176,7 @@ export default function Docs() {
         </p>
         <div className="flex flex-wrap gap-2">
           {templates.map((t) => (
-            <Link key={t.slug} to={`/?t=${t.slug}`} className="rounded-md bg-zinc-100 px-2 py-1 font-mono text-xs hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700">
+            <Link key={t.slug} to={`/studio?t=${t.slug}`} className="rounded-md bg-zinc-100 px-2 py-1 font-mono text-xs hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700">
               {t.slug}
             </Link>
           ))}
@@ -140,6 +200,7 @@ export default function Docs() {
           </table>
         </Card>
       </Section>
+      </div>
     </div>
   );
 }
