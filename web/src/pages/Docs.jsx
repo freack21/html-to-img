@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Badge, Card, CopyButton, PageHeader, cx } from "../components/ui.jsx";
 import { api } from "../lib/api.js";
+import { useAuth } from "../lib/auth.jsx";
 
 function Code({ children }) {
   return (
@@ -17,7 +18,7 @@ function Code({ children }) {
 }
 
 const SECTIONS = [
-  ["auth", "Authentication"],
+  ["auth", "Access & limits"],
   ["render", "Render an image"],
   ["templates", "Templates"],
   ["errors", "Errors"],
@@ -81,11 +82,14 @@ const ERRORS = [
   ["404", "not_found", "Unknown or inactive template."],
   ["413", "image_too_large", "Output would exceed the maximum pixel count."],
   ["422", "validation_error", "Invalid params; `error.details` lists each field."],
-  ["429", "rate_limited", "Too many requests; honour the Retry-After header."],
+  ["429", "rate_limited", "Rate limit reached; wait the number of seconds in Retry-After."],
 ];
 
 export default function Docs() {
   const origin = window.location.origin;
+  const { pricing, session } = useAuth();
+  const perMinute = session?.usage?.period === "minute" ? session.usage.limit : 5;
+  const authHeader = pricing ? `\n  -H "Authorization: Bearer $HTI_KEY" \\` : "";
   const [templates, setTemplates] = useState([]);
   useEffect(() => {
     api("/templates").then(setTemplates).catch(() => {});
@@ -97,21 +101,42 @@ export default function Docs() {
       <div className="max-w-3xl min-w-0 space-y-12">
       <PageHeader title="API documentation" description="Version 1 · base URL /api/v1 · JSON in, image or JSON out." />
 
-      <Section id="auth" title="Authentication">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Create an API key in your <Link to="/dashboard" className="text-violet-600 underline">dashboard</Link> and send it
-          as a bearer token (or an <code>X-API-Key</code> header). Requests without a key are treated as guest requests:
-          limited per IP per day and watermarked.
-        </p>
-        <Code>{`Authorization: Bearer hti_xxxxxxxxxxxxxxxxxxxxxxxx`}</Code>
+      <Section id="auth" title="Access & limits">
+        {pricing ? (
+          <>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Create an API key in your <Link to="/dashboard" className="text-violet-600 underline">dashboard</Link> and send it
+              as a bearer token (or an <code>X-API-Key</code> header). Requests without a key are treated as guest requests:
+              limited per IP per day and watermarked.
+            </p>
+            <Code>{`Authorization: Bearer hti_xxxxxxxxxxxxxxxxxxxxxxxx`}</Code>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              The API is free and needs <strong>no API key or account</strong>. Images are watermark-free and every template is
+              available. To keep it fair, each IP address can render up to <strong>{perMinute} images per minute</strong>{" "}
+              (a rolling 60-second window).
+            </p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Every render response includes <code>X-RateLimit-Limit</code> and <code>X-RateLimit-Remaining</code>. Over the
+              limit you get <code>429 rate_limited</code> with a <code>Retry-After</code> header (seconds). Failed renders and
+              studio previews don't count.
+            </p>
+            <Code>{`HTTP/1.1 429 Too Many Requests
+Retry-After: 12
+
+{ "success": false, "error": { "code": "rate_limited",
+  "message": "Free limit is ${perMinute} images per minute per IP. Try again in 12s." } }`}</Code>
+          </>
+        )}
       </Section>
 
       <Section id="render" title="Render an image">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           <Badge tone="violet">POST</Badge> <code>/api/v1/render</code> — the template slug goes in the payload.
         </p>
-        <Code>{`curl -X POST ${origin}/api/v1/render \\
-  -H "Authorization: Bearer $HTI_KEY" \\
+        <Code>{`curl -X POST ${origin}/api/v1/render \\${authHeader}
   -H "Content-Type: application/json" \\
   -d '{
     "template": "qc",
@@ -134,7 +159,7 @@ export default function Docs() {
                 ["template", "string", "Template slug (required)."],
                 ["params", "object", "Template params; omitted ones use their defaults."],
                 ["format", '"png" | "jpeg" | "svg"', 'Output format. Default "png" ("jpg" is accepted).'],
-                ["scale", "1–4", "Pixel density multiplier, limited by your plan. Default 1."],
+                ["scale", "1–4", pricing ? "Pixel density multiplier, limited by your plan. Default 1." : "Pixel density multiplier. Default 1."],
                 ["output", '"binary" | "url"', '"binary" returns the image; "url" stores it and returns JSON with a link.'],
               ].map(([field, type, desc]) => (
                 <tr key={field}>
@@ -164,8 +189,16 @@ export default function Docs() {
           <code>http(s)</code> URL or a base64 <code>data:image/…</code> URI (PNG, JPEG, GIF, WebP; max 5 MB).
         </p>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Every render response carries <code>X-Quota-Limit</code>, <code>X-Quota-Remaining</code> and{" "}
-          <code>X-Render-Id</code> headers.
+          Every render response carries an <code>X-Render-Id</code> header, plus{" "}
+          {pricing ? (
+            <>
+              <code>X-Quota-Limit</code> and <code>X-Quota-Remaining</code>.
+            </>
+          ) : (
+            <>
+              <code>X-RateLimit-Limit</code> and <code>X-RateLimit-Remaining</code>.
+            </>
+          )}
         </p>
       </Section>
 
@@ -189,7 +222,7 @@ export default function Docs() {
         <Card className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {ERRORS.map(([status, code, desc]) => (
+              {ERRORS.filter(([status]) => pricing || !["401", "402", "403"].includes(status)).map(([status, code, desc]) => (
                 <tr key={status}>
                   <td className="px-4 py-2 font-mono text-xs">{status}</td>
                   <td className="px-4 py-2 font-mono text-xs text-zinc-500">{code}</td>

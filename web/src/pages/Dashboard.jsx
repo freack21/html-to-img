@@ -21,9 +21,40 @@ function StatCard({ icon, label, value, hint, children }) {
   );
 }
 
-function Overview() {
+function FreeOverview() {
   const { session } = useAuth();
+  const { usage, limits } = session;
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon="sparkles" label="Access" value="Free" hint="No plan, quota or API key needed" />
+        <StatCard icon="zap" label="Rate limit" value={`${usage.limit} / min`} hint="Images per IP in any 60 seconds" />
+        <StatCard icon="image" label="Left this minute" value={formatNumber(usage.remaining)}>
+          <div className="mt-3">
+            <UsageBar used={usage.used} limit={usage.limit} />
+          </div>
+        </StatCard>
+        <StatCard icon="history" label="Link retention" value={`${limits.retentionHours} h`} hint="Hosted image links expire after this" />
+      </div>
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
+        <p className="text-sm text-zinc-500">Every template is available, without watermarks, from the studio or the API.</p>
+        <div className="flex gap-2">
+          <Link to="/studio" className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-violet-500">
+            <Icon name="layout" /> Open studio
+          </Link>
+          <Link to="/docs" className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium ring-1 ring-zinc-300 hover:bg-zinc-50 dark:ring-zinc-700 dark:hover:bg-zinc-800">
+            API docs
+          </Link>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function Overview() {
+  const { session, pricing } = useAuth();
   const { plan, usage, limits } = session;
+  if (!pricing) return <FreeOverview />;
   const pct = usage.limit ? Math.round((usage.used / usage.limit) * 100) : 0;
   return (
     <div className="space-y-4">

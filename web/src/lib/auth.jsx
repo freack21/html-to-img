@@ -33,6 +33,8 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user ?? null,
     isAdmin: session?.user?.role === "admin",
+    // Plans/quotas switched on by the admin. Off = free mode with a per-IP rate limit only.
+    pricing: Boolean(session?.pricingEnabled),
     refresh,
     login,
     register,

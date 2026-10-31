@@ -28,7 +28,7 @@ function GridBackground() {
   );
 }
 
-function HeroVisual() {
+function HeroVisual({ pricing }) {
   const origin = window.location.origin;
   return (
     <div className="relative mx-auto mt-14 max-w-5xl">
@@ -41,7 +41,11 @@ function HeroVisual() {
           </div>
           <pre className="overflow-x-auto text-[12px] leading-relaxed text-zinc-300">
             <span className="text-fuchsia-400">curl</span> -X POST {origin}/api/v1/render \{"\n"}
-            {"  "}-H <span className="text-emerald-300">"Authorization: Bearer $KEY"</span> \{"\n"}
+            {pricing && (
+              <>
+                {"  "}-H <span className="text-emerald-300">"Authorization: Bearer $KEY"</span> \{"\n"}
+              </>
+            )}
             {"  "}-d <span className="text-emerald-300">{`'{"template": "tweet",`}</span>{"\n"}
             {"       "}
             <span className="text-emerald-300">{`"params": {"username": "Fikri"}}'`}</span> \{"\n"}
@@ -57,6 +61,7 @@ function HeroVisual() {
 }
 
 function Showcase() {
+  const { pricing } = useAuth();
   const [templates, setTemplates] = useState(null);
   useEffect(() => {
     api("/templates").then(setTemplates).catch(() => setTemplates([]));
@@ -88,7 +93,7 @@ function Showcase() {
                   <p className="truncate text-sm font-medium">{t.name}</p>
                   <p className="text-xs text-zinc-500 capitalize">{t.category}</p>
                 </div>
-                {t.isPremium && <Badge tone="amber">Pro</Badge>}
+                {pricing && t.isPremium && <Badge tone="amber">Pro</Badge>}
               </div>
             </Link>
           ) : (
@@ -101,7 +106,15 @@ function Showcase() {
 }
 
 export default function Landing() {
-  const { user } = useAuth();
+  const { user, session, pricing } = useAuth();
+  const perMinute = session?.usage?.period === "minute" ? session.usage.limit : 5;
+  const features = pricing
+    ? FEATURES
+    : FEATURES.map((f) =>
+        f.icon === "key"
+          ? { icon: "key", title: "Free API, no key needed", text: `Call the render API without signing up — up to ${perMinute} images per minute per IP.` }
+          : f,
+      );
   return (
     <div className="-mt-8 sm:-mt-10">
       <section className="relative isolate pt-16 pb-10 text-center sm:pt-24">
@@ -131,8 +144,8 @@ export default function Landing() {
             <Icon name="code" className="size-4" /> Read the API docs
           </Link>
         </div>
-        <p className="mt-4 text-xs text-zinc-500">{user ? `Welcome back, ${user.name}.` : "Try it without an account · free plan available"}</p>
-        <HeroVisual />
+        <p className="mt-4 text-xs text-zinc-500">{user ? `Welcome back, ${user.name}.` : pricing ? "Try it without an account · free plan available" : "Free to use · no sign-up or API key needed"}</p>
+        <HeroVisual pricing={pricing} />
       </section>
 
       <Showcase />
@@ -162,7 +175,7 @@ export default function Landing() {
           <h2 className="mt-1 text-3xl font-semibold tracking-tight">Everything you need to generate images at scale</h2>
         </div>
         <div className="mt-10 grid gap-px overflow-hidden rounded-2xl bg-zinc-200 ring-1 ring-zinc-200 sm:grid-cols-2 lg:grid-cols-3 dark:bg-zinc-800 dark:ring-zinc-800">
-          {FEATURES.map((f) => (
+          {features.map((f) => (
             <div key={f.title} className="bg-white p-6 dark:bg-zinc-950">
               <Icon name={f.icon} className="size-5 text-violet-600 dark:text-violet-400" />
               <h3 className="mt-4 font-semibold">{f.title}</h3>
@@ -176,13 +189,17 @@ export default function Landing() {
         <div className="relative isolate overflow-hidden rounded-3xl bg-zinc-950 px-6 py-14 text-center sm:px-16">
           <div aria-hidden="true" className="absolute -top-24 left-1/2 -z-10 h-64 w-[40rem] -translate-x-1/2 rounded-full bg-violet-600/40 blur-3xl" />
           <h2 className="text-3xl font-semibold tracking-tight text-white">Ready to render your first image?</h2>
-          <p className="mx-auto mt-3 max-w-md text-zinc-400">Start in the studio as a guest, or create a free account for watermark-free renders and an API key.</p>
+          <p className="mx-auto mt-3 max-w-md text-zinc-400">
+            {pricing
+              ? "Start in the studio as a guest, or create a free account for watermark-free renders and an API key."
+              : "Everything is free right now — open the studio or call the API, no account needed."}
+          </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to={user ? "/studio" : "/register"} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-200">
-              {user ? "Open the studio" : "Create a free account"}
+            <Link to={user || !pricing ? "/studio" : "/register"} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-200">
+              {user || !pricing ? "Open the studio" : "Create a free account"}
             </Link>
-            <Link to="/pricing" className="rounded-xl px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/20 hover:bg-white/10">
-              See pricing
+            <Link to={pricing ? "/pricing" : "/docs"} className="rounded-xl px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/20 hover:bg-white/10">
+              {pricing ? "See pricing" : "Read the API docs"}
             </Link>
           </div>
         </div>

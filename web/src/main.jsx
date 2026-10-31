@@ -35,6 +35,13 @@ function RequireAuth({ admin = false }) {
   return <Outlet />;
 }
 
+/** Pricing is hidden while plans are switched off by the admin. */
+function PricingPage() {
+  const { loading, pricing } = useAuth();
+  if (loading) return null;
+  return pricing ? <Pricing /> : <Navigate to="/" replace />;
+}
+
 /** "/" is the landing page; old studio links (/?t=slug) keep working. */
 function Home() {
   const { search } = useLocation();
@@ -70,7 +77,7 @@ createRoot(document.getElementById("root")).render(
                 </Route>
                 <Route element={<Layout />}>
                   <Route index element={<Home />} />
-                  <Route path="pricing" element={<Pricing />} />
+                  <Route path="pricing" element={<PricingPage />} />
                   <Route path="docs" element={<Docs />} />
                   <Route path="login" element={<Login />} />
                   <Route path="register" element={<Register />} />

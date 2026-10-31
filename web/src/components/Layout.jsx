@@ -7,9 +7,15 @@ import { Badge, Icon, Menu, Sheet, cx } from "./ui.jsx";
 
 const NAV = [
   { to: "/studio", label: "Studio", icon: "layout" },
-  { to: "/pricing", label: "Pricing", icon: "card" },
+  { to: "/pricing", label: "Pricing", icon: "card", pricingOnly: true },
   { to: "/docs", label: "API Docs", icon: "book" },
 ];
+
+/** Navigation entries, without pricing while plans are switched off. */
+function useNav() {
+  const { pricing } = useAuth();
+  return NAV.filter((item) => pricing || !item.pricingOnly);
+}
 
 export function Logo({ compact = false }) {
   return (
@@ -64,6 +70,7 @@ function QuotaPill({ usage }) {
 }
 
 function UserMenu({ user, plan, isAdmin, onLogout }) {
+  const { pricing } = useAuth();
   const navigate = useNavigate();
   return (
     <Menu
@@ -75,7 +82,7 @@ function UserMenu({ user, plan, isAdmin, onLogout }) {
             <p className="truncate text-sm font-medium">{user.name}</p>
             <p className="truncate text-xs text-zinc-500">{user.email}</p>
           </div>
-          {plan && <Badge tone="violet">{plan.name}</Badge>}
+          {pricing && plan && <Badge tone="violet">{plan.name}</Badge>}
         </div>
       }
       className="w-64"
@@ -101,8 +108,9 @@ function MobileNav({ open, onClose, user, isAdmin, onLogout }) {
       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
       isActive ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300" : "hover:bg-zinc-100 dark:hover:bg-zinc-800",
     );
+  const nav = useNav();
   const links = [
-    ...NAV,
+    ...nav,
     ...(user ? [{ to: "/dashboard", label: "Dashboard", icon: "chart" }] : []),
     ...(isAdmin ? [{ to: "/admin", label: "Admin panel", icon: "shield" }] : []),
   ];
@@ -144,9 +152,9 @@ function MobileNav({ open, onClose, user, isAdmin, onLogout }) {
 }
 
 function Footer() {
-  const { user } = useAuth();
+  const { user, pricing } = useAuth();
   const columns = [
-    { title: "Product", links: [["Studio", "/studio"], ["Pricing", "/pricing"], ["API docs", "/docs"]] },
+    { title: "Product", links: [["Studio", "/studio"], ...(pricing ? [["Pricing", "/pricing"]] : []), ["API docs", "/docs"]] },
     { title: "Account", links: user ? [["Dashboard", "/dashboard"]] : [["Log in", "/login"], ["Sign up", "/register"]] },
   ];
   return (
@@ -197,7 +205,8 @@ function Footer() {
  * below the header and no footer.
  */
 export default function Layout({ fullBleed = false }) {
-  const { user, session, isAdmin, logout } = useAuth();
+  const { user, session, isAdmin, logout, pricing } = useAuth();
+  const nav = useNav();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -216,14 +225,14 @@ export default function Layout({ fullBleed = false }) {
         <div className={cx("mx-auto flex h-16 items-center gap-3 px-4 sm:px-6", !fullBleed && "max-w-7xl")}>
           <Logo />
           <nav aria-label="Main" className="ml-6 hidden items-center gap-1 md:flex">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <NavLink key={item.to} to={item.to} className={navLinkClass}>
                 {item.label}
               </NavLink>
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            {user && <QuotaPill usage={session?.usage} />}
+            {user && pricing && <QuotaPill usage={session?.usage} />}
             <ThemeMenu />
             {user ? (
               <div className="hidden md:block">

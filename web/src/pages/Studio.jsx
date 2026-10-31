@@ -53,7 +53,7 @@ function download(blob, fileName) {
 // ---------------------------------------------------------------------------
 // Template browser
 
-function TemplateCard({ template, selected, onSelect }) {
+function TemplateCard({ template, selected, onSelect, showPremium }) {
   return (
     <button
       type="button"
@@ -77,13 +77,13 @@ function TemplateCard({ template, selected, onSelect }) {
       </div>
       <div className="flex items-center justify-between gap-1 px-2.5 py-2">
         <span className="truncate text-xs font-medium">{template.name}</span>
-        {template.isPremium && <Badge tone="amber">Pro</Badge>}
+        {showPremium && template.isPremium && <Badge tone="amber">Pro</Badge>}
       </div>
     </button>
   );
 }
 
-function TemplateBrowser({ templates, selected, onSelect }) {
+function TemplateBrowser({ templates, selected, onSelect, showPremium }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const categories = useMemo(() => ["all", ...new Set(templates.map((t) => t.category))], [templates]);
@@ -133,7 +133,7 @@ function TemplateBrowser({ templates, selected, onSelect }) {
       {/* Desktop: scrolling 2-column grid. Mobile: horizontal strip. */}
       <div className="flex gap-2 overflow-x-auto px-4 pb-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:content-start lg:overflow-x-visible lg:overflow-y-auto">
         {filtered.map((t) => (
-          <TemplateCard key={t.slug} template={t} selected={t.slug === selected} onSelect={onSelect} />
+          <TemplateCard key={t.slug} template={t} selected={t.slug === selected} onSelect={onSelect} showPremium={showPremium} />
         ))}
         {filtered.length === 0 && <p className="col-span-2 py-6 text-center text-sm text-zinc-500">No templates match.</p>}
       </div>
@@ -144,7 +144,7 @@ function TemplateBrowser({ templates, selected, onSelect }) {
 // ---------------------------------------------------------------------------
 // Canvas
 
-function Canvas({ template, preview }) {
+function Canvas({ template, preview, showPremium }) {
   const [zoom, setZoom] = useState("fit");
   const [background, setBackground] = useState("checker");
   const [natural, setNatural] = useState(null);
@@ -171,7 +171,7 @@ function Canvas({ template, preview }) {
               {template.width}×{template.height ?? "auto"}
             </span>
           )}
-          {template?.isPremium && <Badge tone="amber">Premium</Badge>}
+          {showPremium && template?.isPremium && <Badge tone="amber">Premium</Badge>}
         </div>
         <div className="ml-auto flex items-center gap-2">
           <SegmentedControl aria-label="Canvas background" iconOnly options={BACKGROUNDS} value={background} onChange={setBackground} />
@@ -233,19 +233,22 @@ function Canvas({ template, preview }) {
 // ---------------------------------------------------------------------------
 // Inspector
 
-function ApiPanel({ slug, values, format, scale }) {
+function ApiPanel({ slug, values, format, scale, pricing }) {
   const origin = window.location.origin;
   // Uploaded images are too large for a URL; leave them out of the snippet.
   const params = Object.fromEntries(Object.entries(values).filter(([, v]) => !String(v).startsWith("data:")));
   const body = JSON.stringify({ template: slug, format, scale, params }, null, 2);
-  const curl = `curl -X POST ${origin}/api/v1/render \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
+  const auth = pricing ? `\n  -H "Authorization: Bearer YOUR_API_KEY" \\` : "";
+  const curl = `curl -X POST ${origin}/api/v1/render \\${auth}
   -H "Content-Type: application/json" \\
   -d '${body.replaceAll("'", "'\\''")}' \\
   -o image.${format === "jpeg" ? "jpg" : format}`;
   return (
     <div className="space-y-3">
-      <p className="text-sm text-zinc-500">Render this exact image from your code. Create a key in your dashboard.</p>
+      <p className="text-sm text-zinc-500">
+        Render this exact image from your code.{" "}
+        {pricing ? "Create a key in your dashboard." : "No API key needed — the free API allows a few images per minute per IP."}
+      </p>
       <pre className="overflow-x-auto rounded-xl bg-zinc-950 p-3.5 text-[11px] leading-relaxed text-zinc-100 ring-1 ring-zinc-800">{curl}</pre>
       <div className="flex gap-2">
         <CopyButton text={curl} label="Copy cURL" />
@@ -259,6 +262,17 @@ function ApiPanel({ slug, values, format, scale }) {
 
 function UsageMeter({ usage, user }) {
   if (!usage) return null;
+  if (usage.period === "minute") {
+    return (
+      <div className="space-y-1.5 text-xs text-zinc-500">
+        <div className="flex justify-between">
+          <span>Free · {usage.limit} images per minute</span>
+          <span className="tabular-nums">{formatNumber(usage.remaining)} left</span>
+        </div>
+        <UsageBar used={usage.used} limit={usage.limit} />
+      </div>
+    );
+  }
   return (
     <div className="space-y-1.5 text-xs text-zinc-500">
       <div className="flex justify-between">
@@ -284,7 +298,7 @@ function UsageMeter({ usage, user }) {
 // ---------------------------------------------------------------------------
 
 export default function Studio() {
-  const { session, user, refresh } = useAuth();
+  const { session, user, refresh, pricing } = useAuth();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [templates, setTemplates] = useState(null);
@@ -318,7 +332,8 @@ export default function Studio() {
   const limits = session?.limits;
   const usage = session?.usage;
   const locked = template?.isPremium && !limits?.premiumTemplates;
-  const outOfQuota = usage && usage.limit !== null && usage.remaining <= 0;
+  // The per-minute free limit refills by itself, so only monthly/daily quotas disable rendering.
+  const outOfQuota = pricing && usage && usage.limit !== null && usage.remaining <= 0;
   const disabled = Boolean(busy) || outOfQuota || locked;
 
   const run = useCallback(
@@ -344,7 +359,7 @@ export default function Studio() {
           setPanel("customize");
           toast({ title: "Check the highlighted fields", tone: "error" });
         } else {
-          toast({ title: "Render failed", description: err.message, tone: "error" });
+          toast({ title: err.status === 429 ? "Slow down a little" : "Render failed", description: err.message, tone: "error" });
         }
       } finally {
         setBusy(null);
@@ -377,7 +392,7 @@ export default function Studio() {
       {/* Templates */}
       <aside aria-label="Templates" className="border-b border-zinc-200 bg-white lg:min-h-0 lg:border-r lg:border-b-0 dark:border-zinc-800 dark:bg-zinc-950">
         {templates ? (
-          <TemplateBrowser templates={templates} selected={slug} onSelect={(s) => setSearchParams({ t: s })} />
+          <TemplateBrowser templates={templates} selected={slug} onSelect={(s) => setSearchParams({ t: s })} showPremium={pricing} />
         ) : (
           <div className="space-y-3 p-4">
             <Skeleton className="h-5 w-24" />
@@ -393,7 +408,7 @@ export default function Studio() {
 
       {/* Canvas */}
       <section aria-label="Preview" className="h-[46vh] min-w-0 bg-zinc-50 lg:h-auto lg:min-h-0 dark:bg-zinc-900/40">
-        <Canvas template={template} preview={preview} />
+        <Canvas template={template} preview={preview} showPremium={pricing} />
       </section>
 
       {/* Inspector */}
@@ -439,7 +454,7 @@ export default function Studio() {
           ) : panel === "customize" ? (
             <ParamForm params={template.params} values={values} onChange={setValues} errors={errors} />
           ) : (
-            <ApiPanel slug={template.slug} values={values} format={format} scale={scale} />
+            <ApiPanel slug={template.slug} values={values} format={format} scale={scale} pricing={pricing} />
           )}
         </div>
 
