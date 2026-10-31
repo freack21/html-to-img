@@ -62,7 +62,7 @@ function sendImage(res, result, fileName) {
   res.send(result.buffer);
 }
 
-export function renderRoutes({ db, config, renderer, storage }) {
+export function renderRoutes({ db, config, renderer, storage, freeLimiter }) {
   const router = Router();
   const thumbnails = new Map();
 
@@ -83,31 +83,54 @@ export function renderRoutes({ db, config, renderer, storage }) {
     }
     const settings = getSettings(db);
     const policy = policyFor(principal, settings);
-
-    assertApiAccess(principal);
-    if (template.isPremium && !policy.premiumTemplates) {
-      throw new HttpError(403, "This template requires a premium plan", { code: "premium_template" });
-    }
-    if (data.scale > policy.maxScale) {
-      throw new HttpError(403, `Maximum scale for your plan is ${policy.maxScale}`, { code: "scale_not_allowed" });
-    }
-
     const client = clientId(req);
-    const usage = usageFor(db, principal, client, settings);
-    setQuotaHeaders(res, usage);
-    if (usage.limit !== null && usage.used >= usage.limit) {
-      const message = principal
-        ? "Monthly render quota exceeded; upgrade your plan or wait for the next period"
-        : "Daily guest limit reached; create a free account to keep rendering";
-      throw new HttpError(402, message, { code: "quota_exceeded" });
+    let usage = null;
+    let releaseSlot = null;
+
+    if (settings.pricingEnabled) {
+      assertApiAccess(principal);
+      if (template.isPremium && !policy.premiumTemplates) {
+        throw new HttpError(403, "This template requires a premium plan", { code: "premium_template" });
+      }
+      if (data.scale > policy.maxScale) {
+        throw new HttpError(403, `Maximum scale for your plan is ${policy.maxScale}`, { code: "scale_not_allowed" });
+      }
+      usage = usageFor(db, principal, client, settings);
+      setQuotaHeaders(res, usage);
+      if (usage.limit !== null && usage.used >= usage.limit) {
+        const message = principal
+          ? "Monthly render quota exceeded; upgrade your plan or wait for the next period"
+          : "Daily guest limit reached; create a free account to keep rendering";
+        throw new HttpError(402, message, { code: "quota_exceeded" });
+      }
+    } else {
+      // Free mode: no key or account needed, only a per-IP rate limit.
+      const limit = settings.freeRendersPerMinute;
+      const slot = freeLimiter.take(client, limit);
+      res.set("X-RateLimit-Limit", String(limit));
+      res.set("X-RateLimit-Remaining", String(slot.remaining));
+      if (!slot.allowed) {
+        res.set("Retry-After", String(slot.retryAfter));
+        throw new HttpError(429, `Free limit is ${limit} images per minute per IP. Try again in ${slot.retryAfter}s.`, {
+          code: "rate_limited",
+        });
+      }
+      releaseSlot = slot.release;
     }
 
     const started = performance.now();
-    const result = await renderer(template.definition, data.params, {
-      format: data.format,
-      scale: data.scale,
-      watermark: policy.watermark,
-    });
+    let result;
+    try {
+      result = await renderer(template.definition, data.params, {
+        format: data.format,
+        scale: data.scale,
+        watermark: policy.watermark,
+      });
+    } catch (err) {
+      // Invalid params or unreachable images don't use up the free allowance.
+      releaseSlot?.();
+      throw err;
+    }
     const id = randomId();
     const ext = EXTENSIONS[result.format];
     let fileName = null;
@@ -131,7 +154,7 @@ export function renderRoutes({ db, config, renderer, storage }) {
       fileName,
       expiresAt,
     });
-    setQuotaHeaders(res, usage, 1);
+    if (usage) setQuotaHeaders(res, usage, 1);
     res.set("X-Render-Id", id);
 
     if (data.output === "url") {

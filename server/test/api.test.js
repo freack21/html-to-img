@@ -10,6 +10,8 @@ import { seed } from "../src/db/seed.js";
 import { createRenderer } from "../src/engine/index.js";
 import { cleanupExpired } from "../src/services/renders.js";
 import { updateSettings } from "../src/services/settings.js";
+import { createSlidingWindow } from "../src/lib/rate-limit.js";
+import { getTemplateBySlug } from "../src/services/templates.js";
 import { createStorage } from "../src/services/storage.js";
 import { ensureAdmin } from "../src/services/users.js";
 
@@ -31,6 +33,8 @@ async function startServer() {
     db,
     storage,
     base,
+    renderer,
+    template: (slug) => getTemplateBySlug(db, slug).definition,
     async close() {
       await new Promise((resolve) => server.close(resolve));
       db.close();
@@ -69,6 +73,8 @@ function client(base) {
 let ctx;
 before(async () => {
   ctx = await startServer();
+  // Most suites below exercise plans and quotas; free mode has its own suite at the end.
+  updateSettings(ctx.db, { pricingEnabled: true });
 });
 after(() => ctx.close());
 
@@ -355,4 +361,81 @@ test("cleanup removes expired files and tolerates missing ones", async () => {
   assert.equal(await cleanupExpired(ctx.db, ctx.storage), 2);
   assert.equal(fs.existsSync(path.join(ctx.storage.dir, name)), false);
   assert.equal(await cleanupExpired(ctx.db, ctx.storage), 0);
+});
+
+describe("free mode (pricing disabled)", () => {
+  const from = (ip) => ({ headers: { "x-forwarded-for": ip } });
+  before(() => updateSettings(ctx.db, { pricingEnabled: false, freeRendersPerMinute: 5 }));
+  after(() => updateSettings(ctx.db, { pricingEnabled: true }));
+
+  test("renders without any auth, watermark-free, premium and high scale allowed", async () => {
+    const api = client(ctx.base);
+    const premium = await api.get("/api/v1/render?template=certificate&scale=2", from("198.51.100.10"));
+    assert.equal(premium.status, 200);
+    assert.ok(isPng(premium.data));
+    assert.equal(premium.headers.get("x-ratelimit-limit"), "5");
+    assert.equal(premium.headers.get("x-ratelimit-remaining"), "4");
+    assert.equal(premium.headers.get("x-quota-limit"), null, "no quota headers in free mode");
+
+    const plain = await ctx.renderer(ctx.template("qc"), {}, { format: "svg" });
+    const viaApi = await api.get("/api/v1/render?template=qc&format=svg", from("198.51.100.10"));
+    assert.equal(viaApi.data.length, plain.buffer.length, "same output as an unwatermarked render");
+  });
+
+  test("allows 5 images per minute per IP, then 429 with Retry-After", async () => {
+    const api = client(ctx.base);
+    for (let i = 1; i <= 5; i++) {
+      const res = await api.get("/api/v1/render?template=qc", from("198.51.100.20"));
+      assert.equal(res.status, 200, `render ${i}`);
+      assert.equal(res.headers.get("x-ratelimit-remaining"), String(5 - i));
+    }
+    const blocked = await api.get("/api/v1/render?template=qc", from("198.51.100.20"));
+    assert.equal(blocked.status, 429);
+    assert.equal(blocked.data.error.code, "rate_limited");
+    assert.ok(Number(blocked.headers.get("retry-after")) >= 1);
+
+    const other = await api.get("/api/v1/render?template=qc", from("198.51.100.21"));
+    assert.equal(other.status, 200, "another IP has its own allowance");
+
+    const me = await api.get("/api/v1/auth/me", from("198.51.100.20"));
+    assert.equal(me.data.data.pricingEnabled, false);
+    assert.deepEqual([me.data.data.usage.period, me.data.data.usage.used, me.data.data.usage.remaining], ["minute", 5, 0]);
+  });
+
+  test("failed renders and previews don't use the allowance", async () => {
+    const api = client(ctx.base);
+    const bad = await api.post("/api/v1/render", { template: "qc", params: { bgColor: "not a color" } }, from("198.51.100.30"));
+    assert.equal(bad.status, 422);
+    await api.post("/api/v1/preview", { template: "qc" }, from("198.51.100.30"));
+    const ok = await api.get("/api/v1/render?template=qc", from("198.51.100.30"));
+    assert.equal(ok.headers.get("x-ratelimit-remaining"), "4");
+  });
+
+  test("concurrent requests cannot exceed the limit", async () => {
+    const api = client(ctx.base);
+    const results = await Promise.all(Array.from({ length: 8 }, () => api.get("/api/v1/render?template=qc", from("198.51.100.40"))));
+    assert.equal(results.filter((r) => r.status === 200).length, 5);
+    assert.equal(results.filter((r) => r.status === 429).length, 3);
+  });
+});
+
+test("sliding window frees slots exactly one window after they were used", () => {
+  let now = 0;
+  const window = createSlidingWindow({ windowMs: 60_000, now: () => now });
+  for (let i = 0; i < 5; i++) {
+    assert.equal(window.take("ip", 5).allowed, true);
+    now += 10_000; // t = 0, 10, 20, 30, 40 s
+  }
+  now = 59_000;
+  const blocked = window.take("ip", 5);
+  assert.equal(blocked.allowed, false);
+  assert.equal(blocked.retryAfter, 1, "the first slot frees at t = 60 s");
+  now = 60_001;
+  assert.equal(window.take("ip", 5).allowed, true);
+  assert.equal(window.peek("ip", 5).remaining, 0);
+  // release() hands back exactly the slot it took.
+  const first = window.take("other", 5);
+  window.take("other", 5);
+  first.release();
+  assert.equal(window.peek("other", 5).used, 1);
 });

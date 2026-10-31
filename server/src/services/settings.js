@@ -3,6 +3,10 @@ import { ValidationError, zodDetails } from "../lib/errors.js";
 import { onlyProvided } from "../lib/patch.js";
 
 export const settingsSchema = z.object({
+  // Plans, quotas and premium templates. While off, rendering is free for everyone and
+  // only limited per IP by freeRendersPerMinute.
+  pricingEnabled: z.boolean().default(false),
+  freeRendersPerMinute: z.number().int().min(1).max(600).default(5),
   registrationOpen: z.boolean().default(true),
   guestDailyLimit: z.number().int().min(0).max(100000).default(10),
   guestWatermark: z.boolean().default(true),

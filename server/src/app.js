@@ -3,6 +3,7 @@ import path from "node:path";
 import express from "express";
 import { authenticate } from "./auth/middleware.js";
 import { HttpError } from "./lib/errors.js";
+import { createSlidingWindow } from "./lib/rate-limit.js";
 import { accountRoutes } from "./routes/account.js";
 import { adminRoutes } from "./routes/admin.js";
 import { renderRoutes, SVG_CSP } from "./routes/render.js";
@@ -32,9 +33,11 @@ function errorHandler(logger) {
 }
 
 /**
- * @param {{ db, config, renderer, storage, logger? }} ctx
+ * @param {{ db, config, renderer, storage, logger?, freeLimiter? }} appCtx
  */
-export function createApp(ctx) {
+export function createApp(appCtx) {
+  // One free-render limiter shared by /render (enforces) and /auth/me (reports usage).
+  const ctx = { freeLimiter: createSlidingWindow({ windowMs: 60_000 }), ...appCtx };
   const { db, config, storage, logger = console } = ctx;
   const app = express();
   app.disable("x-powered-by");

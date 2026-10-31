@@ -27,7 +27,7 @@ const pageQuery = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-export function accountRoutes({ db, config }) {
+export function accountRoutes({ db, config, freeLimiter }) {
   const router = Router();
   const authLimiter = rateLimit({ windowMs: 15 * 60_000, max: 20, message: "Too many attempts, try again later" });
 
@@ -39,12 +39,16 @@ export function accountRoutes({ db, config }) {
 
   const me = (principal, req) => {
     const settings = getSettings(db);
+    const usage = settings.pricingEnabled
+      ? usageFor(db, principal, clientId(req), settings)
+      : { period: "minute", ...freeLimiter.peek(clientId(req), settings.freeRendersPerMinute) };
     return {
       user: principal?.user ?? null,
       plan: principal?.plan ?? null,
-      usage: usageFor(db, principal, clientId(req), settings),
+      usage,
       limits: policyFor(principal, settings),
       registrationOpen: settings.registrationOpen,
+      pricingEnabled: settings.pricingEnabled,
     };
   };
 

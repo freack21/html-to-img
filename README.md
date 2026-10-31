@@ -162,7 +162,18 @@ curl "https://img.example.com/api/v1/render?template=qc&name=Fikri&msg=Hi" -o qc
 
 Every render response carries `X-Quota-Limit`, `X-Quota-Remaining` and `X-Render-Id` headers.
 
-## Plans, quotas and guest mode
+## Free mode (default) and pricing
+
+Pricing is **off by default**. In this free mode the API needs no account or API key. Renders are watermark-free, every template is available (including premium ones) and the scale goes up to 4×. The only limit is **5 images per minute per IP**, counted over a rolling 60-second window:
+
+- Each render response carries `X-RateLimit-Limit` and `X-RateLimit-Remaining`.
+- Over the limit, the API returns `429 rate_limited` with a `Retry-After` header.
+- Failed renders and studio previews don't count.
+- IPv6 clients are grouped per /64.
+
+The limit and link retention are editable in **Admin → Settings**. The **Enable plans & pricing** switch on the same page turns on everything below and shows the pricing pages again.
+
+## Plans, quotas and guest mode (pricing enabled)
 
 | | Guest | Free | Pro | Business |
 | --- | --- | --- | --- | --- |

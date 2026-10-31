@@ -4,6 +4,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** What a caller is allowed to do: guests use admin settings, users use their plan. */
 export function policyFor(principal, settings) {
+  if (!settings.pricingEnabled) {
+    return { watermark: null, maxScale: 4, retentionHours: settings.guestRetentionHours, premiumTemplates: true };
+  }
   if (!principal) {
     return {
       watermark: settings.guestWatermark ? settings.watermarkText : null,
