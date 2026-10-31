@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Badge, Button, Card, Field, Input, PageHeader, Toggle } from "../../components/ui.jsx";
+import { Alert, Badge, Button, Card, Field, Input, NumberInput, PageHeader, Toggle, useConfirm } from "../../components/ui.jsx";
 import { api, formatNumber, formatPrice } from "../../lib/api.js";
 import { fieldErrors } from "../../lib/usePreview.js";
 
@@ -26,9 +26,8 @@ function PlanForm({ initial, onSaved, onCancel }) {
   const errors = fieldErrors(error);
 
   const num = (key, nullable = false) => ({
-    type: "number",
     value: form[key] ?? "",
-    onChange: (e) => setForm({ ...form, [key]: e.target.value === "" && nullable ? null : Number(e.target.value) }),
+    onChange: (v) => setForm({ ...form, [key]: v === "" ? (nullable ? null : 0) : v }),
   });
   const text = (key) => ({ value: form[key], onChange: (e) => setForm({ ...form, [key]: e.target.value }) });
   const flag = (key, label) => <Toggle checked={form[key]} onChange={(v) => setForm({ ...form, [key]: v })} label={label} />;
@@ -50,16 +49,16 @@ function PlanForm({ initial, onSaved, onCancel }) {
 
   return (
     <Card className="p-5">
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} noValidate className="space-y-4">
         {error && !error.details.length && <Alert>{error.message}</Alert>}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Name" error={errors.name}><Input {...text("name")} required /></Field>
           <Field label="Slug" error={errors.slug}><Input {...text("slug")} className="font-mono" required /></Field>
-          <Field label="Price (IDR / month)" error={errors.price}><Input {...num("price")} min={0} /></Field>
-          <Field label="Monthly quota" hint="Empty = unlimited" error={errors.monthlyQuota}><Input {...num("monthlyQuota", true)} min={0} /></Field>
-          <Field label="Max scale" error={errors.maxScale}><Input {...num("maxScale")} min={1} max={4} /></Field>
-          <Field label="Link retention (hours)" error={errors.retentionHours}><Input {...num("retentionHours")} min={1} /></Field>
-          <Field label="Sort order" error={errors.sortOrder}><Input {...num("sortOrder")} /></Field>
+          <Field label="Price (IDR / month)" error={errors.price}><NumberInput {...num("price")} min={0} /></Field>
+          <Field label="Monthly quota" hint="Empty = unlimited" error={errors.monthlyQuota}><NumberInput {...num("monthlyQuota", true)} min={0} /></Field>
+          <Field label="Max scale" error={errors.maxScale}><NumberInput {...num("maxScale")} min={1} max={4} /></Field>
+          <Field label="Link retention (hours)" error={errors.retentionHours}><NumberInput {...num("retentionHours")} min={1} /></Field>
+          <Field label="Sort order" error={errors.sortOrder}><NumberInput {...num("sortOrder")} /></Field>
           <Field label="Description" className="sm:col-span-2 lg:col-span-4" error={errors.description}><Input {...text("description")} /></Field>
         </div>
         <div className="flex flex-wrap gap-6">
@@ -79,6 +78,7 @@ function PlanForm({ initial, onSaved, onCancel }) {
 }
 
 export default function Plans() {
+  const confirm = useConfirm();
   const [plans, setPlans] = useState([]);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState(null);
@@ -89,7 +89,13 @@ export default function Plans() {
   }, [load]);
 
   const remove = async (plan) => {
-    if (!confirm(`Delete plan "${plan.name}"?`)) return;
+    const ok = await confirm({
+      title: `Delete plan "${plan.name}"?`,
+      description: "Plans that still have users or are the default can't be deleted.",
+      confirmLabel: "Delete plan",
+      tone: "danger",
+    });
+    if (!ok) return;
     setError(null);
     await api(`/admin/plans/${plan.id}`, { method: "DELETE" }).catch(setError);
     load();

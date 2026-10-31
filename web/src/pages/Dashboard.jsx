@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Alert, Badge, Button, Card, CopyButton, Field, Input, PageHeader, UsageBar } from "../components/ui.jsx";
+import { Alert, Badge, Button, Card, CopyButton, Field, Input, PageHeader, PasswordInput, Tabs, UsageBar, useConfirm } from "../components/ui.jsx";
 import { api, formatBytes, formatDate, formatNumber, formatPrice } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 import { fieldErrors } from "../lib/usePreview.js";
@@ -118,6 +118,7 @@ function History() {
 }
 
 function ApiKeys() {
+  const confirm = useConfirm();
   const { session } = useAuth();
   const [keys, setKeys] = useState([]);
   const [name, setName] = useState("");
@@ -142,7 +143,13 @@ function ApiKeys() {
   };
 
   const revoke = async (id) => {
-    if (!confirm("Revoke this key? Apps using it will stop working immediately.")) return;
+    const ok = await confirm({
+      title: "Revoke this API key?",
+      description: "Apps using it will stop working immediately.",
+      confirmLabel: "Revoke key",
+      tone: "danger",
+    });
+    if (!ok) return;
     await api(`/me/api-keys/${id}`, { method: "DELETE" }).catch(setError);
     load();
   };
@@ -151,13 +158,13 @@ function ApiKeys() {
     <div className="space-y-4">
       {!session.plan.apiAccess && <Alert tone="amber">Your plan does not include API access.</Alert>}
       <Card className="p-5">
-        <form onSubmit={create} className="flex flex-wrap items-end gap-3">
-          <Field label="New key name" className="min-w-48 flex-1">
-            <Input placeholder="e.g. whatsapp-bot" value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} />
+        <form onSubmit={create} noValidate className="flex flex-wrap items-end gap-3">
+          <Field label="New key name" className="min-w-48 flex-1" error={fieldErrors(error).name}>
+            <Input placeholder="e.g. whatsapp-bot" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} />
           </Field>
           <Button type="submit">Create key</Button>
         </form>
-        {error && <div className="mt-3"><Alert>{error.message}</Alert></div>}
+        {error && !error.details?.length && <div className="mt-3"><Alert>{error.message}</Alert></div>}
         {created && (
           <div className="mt-4 space-y-2">
             <Alert tone="green">Copy your key now — it will not be shown again.</Alert>
@@ -221,13 +228,13 @@ function Account() {
         {error && !error.details.length && <Alert>{error.message}</Alert>}
       </div>
       <Card className="p-5">
-        <form onSubmit={submit(() => api("/me", { method: "PATCH", body: { name } }), "Profile updated.")} className="space-y-4">
+        <form onSubmit={submit(() => api("/me", { method: "PATCH", body: { name } }), "Profile updated.")} noValidate className="space-y-4">
           <h2 className="font-semibold">Profile</h2>
           <Field label="Email">
             <Input value={user.email} disabled />
           </Field>
           <Field label="Name" error={errors.name}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
           <Button type="submit">Save</Button>
         </form>
@@ -238,14 +245,15 @@ function Account() {
             await api("/me/password", { method: "POST", body: passwords });
             setPasswords({ currentPassword: "", newPassword: "" });
           }, "Password changed.")}
+          noValidate
           className="space-y-4"
         >
           <h2 className="font-semibold">Password</h2>
           <Field label="Current password" error={errors.currentPassword}>
-            <Input type="password" autoComplete="current-password" value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} required />
+            <PasswordInput autoComplete="current-password" value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} />
           </Field>
           <Field label="New password" hint="At least 8 characters." error={errors.newPassword}>
-            <Input type="password" autoComplete="new-password" minLength={8} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} required />
+            <PasswordInput autoComplete="new-password" value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} />
           </Field>
           <Button type="submit">Change password</Button>
         </form>
@@ -254,30 +262,24 @@ function Account() {
   );
 }
 
-const TABS = { overview: Overview, history: History, keys: ApiKeys, account: Account };
-const LABELS = { overview: "Overview", history: "History", keys: "API keys", account: "Account" };
+const TABS = [
+  { id: "overview", label: "Overview", Component: Overview },
+  { id: "history", label: "History", Component: History },
+  { id: "keys", label: "API keys", Component: ApiKeys },
+  { id: "account", label: "Account", Component: Account },
+];
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [tab, setTab] = useState("overview");
-  const Tab = TABS[tab];
+  const { Component } = TABS.find((t) => t.id === tab);
   return (
     <div>
       <PageHeader title={`Hi, ${user.name}`} description="Your usage, render history, API keys and account." />
-      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-zinc-200 dark:border-zinc-800">
-        {Object.keys(TABS).map((key) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium whitespace-nowrap ${
-              tab === key ? "border-violet-600 text-violet-600 dark:text-violet-400" : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
-            }`}
-          >
-            {LABELS[key]}
-          </button>
-        ))}
+      <Tabs aria-label="Dashboard sections" tabs={TABS} value={tab} onChange={setTab} className="mb-6" />
+      <div role="tabpanel">
+        <Component />
       </div>
-      <Tab />
     </div>
   );
 }

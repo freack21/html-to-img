@@ -2,8 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation } from "react-router";
 import Layout from "./components/Layout.jsx";
-import { Spinner } from "./components/ui.jsx";
+import { ConfirmProvider, Spinner } from "./components/ui.jsx";
 import { AuthProvider, useAuth } from "./lib/auth.jsx";
+import { ThemeProvider } from "./lib/theme.jsx";
 import AdminLayout from "./pages/admin/AdminLayout.jsx";
 import AdminOverview from "./pages/admin/Overview.jsx";
 import AdminPlans from "./pages/admin/Plans.jsx";
@@ -41,8 +42,10 @@ function NotFound() {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
+    <ThemeProvider>
+      <ConfirmProvider>
+        <BrowserRouter>
+          <AuthProvider>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Studio />} />
@@ -66,7 +69,9 @@ createRoot(document.getElementById("root")).render(
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+          </AuthProvider>
+        </BrowserRouter>
+      </ConfirmProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

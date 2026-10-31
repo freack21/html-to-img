@@ -59,25 +59,36 @@ export default function Users() {
                   <p className="text-xs text-zinc-500">{u.email}</p>
                 </td>
                 <td className="px-4 py-2">
-                  <Select value={u.planId} onChange={(e) => update(u.id, { planId: Number(e.target.value) })} className="w-36">
-                    {plans.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <Select
+                    aria-label={`Plan for ${u.email}`}
+                    size="sm"
+                    className="w-36"
+                    value={u.planId}
+                    onChange={(planId) => update(u.id, { planId })}
+                    options={plans.map((p) => ({ value: p.id, label: p.name }))}
+                  />
                 </td>
                 <td className="px-4 py-2">
-                  <Select value={u.role} disabled={u.id === me.id} onChange={(e) => update(u.id, { role: e.target.value })} className="w-28">
-                    <option value="user">user</option>
-                    <option value="admin">admin</option>
-                  </Select>
+                  <Select
+                    aria-label={`Role for ${u.email}`}
+                    size="sm"
+                    className="w-28"
+                    value={u.role}
+                    disabled={u.id === me.id}
+                    onChange={(role) => update(u.id, { role })}
+                    options={["user", "admin"]}
+                  />
                 </td>
                 <td className="px-4 py-2">
-                  <Select value={u.status} disabled={u.id === me.id} onChange={(e) => update(u.id, { status: e.target.value })} className="w-28">
-                    <option value="active">active</option>
-                    <option value="disabled">disabled</option>
-                  </Select>
+                  <Select
+                    aria-label={`Status for ${u.email}`}
+                    size="sm"
+                    className="w-28"
+                    value={u.status}
+                    disabled={u.id === me.id}
+                    onChange={(status) => update(u.id, { status })}
+                    options={["active", "disabled"]}
+                  />
                 </td>
                 <td className="px-4 py-2 text-zinc-500">{formatDate(u.createdAt)}</td>
                 <td className="px-4 py-2 text-zinc-500">{formatDate(u.lastLoginAt)}</td>

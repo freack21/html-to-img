@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import ParamForm, { defaultValues } from "../components/ParamForm.jsx";
-import { Alert, Badge, Button, Card, CopyButton, Field, Input, Select, Spinner, UsageBar, cx } from "../components/ui.jsx";
+import { Alert, Badge, Button, Card, CopyButton, Disclosure, Field, Input, Select, Spinner, UsageBar, cx } from "../components/ui.jsx";
 import { api, apiBlob, formatNumber } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 import { fieldErrors, usePreview } from "../lib/usePreview.js";
@@ -66,13 +66,12 @@ function ApiSnippet({ slug, values, format, scale }) {
   -d '${body.replaceAll("'", "'\\''")}' \\
   -o image.${format === "jpeg" ? "jpg" : format}`;
   return (
-    <details className="group">
-      <summary className="cursor-pointer text-sm font-medium text-zinc-600 dark:text-zinc-400">Use this from the API</summary>
-      <div className="mt-2 space-y-2">
-        <pre className="overflow-x-auto rounded-lg bg-zinc-900 p-3 text-xs text-zinc-100">{curl}</pre>
+    <Disclosure title="Use this from the API">
+      <div className="space-y-2">
+        <pre className="overflow-x-auto rounded-lg bg-zinc-900 p-3 text-xs text-zinc-100 dark:ring-1 dark:ring-zinc-800">{curl}</pre>
         <CopyButton text={curl} label="Copy cURL" />
       </div>
-    </details>
+    </Disclosure>
   );
 }
 
@@ -186,20 +185,25 @@ export default function Studio() {
           <Card className="space-y-4 p-4">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Format">
-                <Select value={format} onChange={(e) => setFormat(e.target.value)}>
-                  <option value="png">PNG</option>
-                  <option value="jpeg">JPEG</option>
-                  <option value="svg">SVG</option>
-                </Select>
+                <Select
+                  value={format}
+                  onChange={setFormat}
+                  options={[
+                    { value: "png", label: "PNG" },
+                    { value: "jpeg", label: "JPEG" },
+                    { value: "svg", label: "SVG" },
+                  ]}
+                />
               </Field>
               <Field label="Scale">
-                <Select value={scale} onChange={(e) => setScale(Number(e.target.value))}>
-                  {[1, 2, 3, 4].map((s) => (
-                    <option key={s} value={s} disabled={s > (limits?.maxScale ?? 1)}>
-                      {s}x{s > (limits?.maxScale ?? 1) ? " (upgrade)" : ""}
-                    </option>
-                  ))}
-                </Select>
+                <Select
+                  value={scale}
+                  onChange={setScale}
+                  options={[1, 2, 3, 4].map((s) => {
+                    const locked = s > (limits?.maxScale ?? 1);
+                    return { value: s, label: `${s}x`, description: locked ? "Upgrade to unlock" : undefined, disabled: locked };
+                  })}
+                />
               </Field>
             </div>
 

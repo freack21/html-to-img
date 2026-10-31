@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Button, Card, Field, Input, PageHeader, Spinner, Toggle } from "../../components/ui.jsx";
+import { Alert, Button, Card, Field, Input, NumberInput, PageHeader, Spinner, Toggle } from "../../components/ui.jsx";
 import { api } from "../../lib/api.js";
 import { fieldErrors } from "../../lib/usePreview.js";
 
@@ -15,7 +15,7 @@ export default function Settings() {
 
   if (!form) return error ? <Alert>{error.message}</Alert> : <Spinner />;
   const errors = fieldErrors(error);
-  const num = (key) => ({ type: "number", value: form[key], onChange: (e) => setForm({ ...form, [key]: Number(e.target.value) }) });
+  const num = (key) => ({ value: form[key], onChange: (v) => setForm({ ...form, [key]: v === "" ? 0 : v }) });
 
   const save = async (event) => {
     event.preventDefault();
@@ -35,7 +35,7 @@ export default function Settings() {
   return (
     <div>
       <PageHeader title="Settings" description="Guest mode and global behaviour." />
-      <form onSubmit={save} className="max-w-2xl space-y-4">
+      <form onSubmit={save} noValidate className="max-w-2xl space-y-4">
         {saved && <Alert tone="green">Settings saved.</Alert>}
         {error && !error.details.length && <Alert>{error.message}</Alert>}
         <Card className="space-y-4 p-5">
@@ -49,13 +49,13 @@ export default function Settings() {
           <h2 className="font-semibold">Guest mode</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Renders per IP per day" hint="0 disables guest renders" error={errors.guestDailyLimit}>
-              <Input {...num("guestDailyLimit")} min={0} />
+              <NumberInput {...num("guestDailyLimit")} min={0} />
             </Field>
             <Field label="Max scale" error={errors.guestMaxScale}>
-              <Input {...num("guestMaxScale")} min={1} max={4} />
+              <NumberInput {...num("guestMaxScale")} min={1} max={4} />
             </Field>
             <Field label="Link retention (hours)" error={errors.guestRetentionHours}>
-              <Input {...num("guestRetentionHours")} min={1} />
+              <NumberInput {...num("guestRetentionHours")} min={1} />
             </Field>
           </div>
           <Toggle checked={form.guestWatermark} onChange={(v) => setForm({ ...form, guestWatermark: v })} label="Watermark guest images" />

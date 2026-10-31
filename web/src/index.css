@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "@fontsource-variable/plus-jakarta-sans";
 
+/* Dark mode follows the .dark class on <html> (set by src/lib/theme.jsx), not only the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -8,7 +11,20 @@
 
 @layer base {
   html {
-    color-scheme: light dark;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  ::selection {
+    @apply bg-violet-500/25;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-zinc-300) transparent;
+  }
+  .dark * {
+    scrollbar-color: var(--color-zinc-700) transparent;
   }
   body {
     @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
@@ -26,13 +42,11 @@
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
 }
-@media (prefers-color-scheme: dark) {
-  .checkerboard {
-    background-color: #18181b;
-    background-image:
-      linear-gradient(45deg, #27272a 25%, transparent 25%),
-      linear-gradient(-45deg, #27272a 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #27272a 75%),
-      linear-gradient(-45deg, transparent 75%, #27272a 75%);
-  }
+.dark .checkerboard {
+  background-color: #18181b;
+  background-image:
+    linear-gradient(45deg, #27272a 25%, transparent 25%),
+    linear-gradient(-45deg, #27272a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #27272a 75%),
+    linear-gradient(-45deg, transparent 75%, #27272a 75%);
 }

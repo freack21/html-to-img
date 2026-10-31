@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import ParamForm, { defaultValues } from "../../components/ParamForm.jsx";
-import { Alert, Button, Card, Field, Input, PageHeader, Spinner, Textarea, Toggle, cx } from "../../components/ui.jsx";
+import { Alert, Button, Card, Disclosure, Field, Input, PageHeader, Spinner, Textarea, Toggle, cx } from "../../components/ui.jsx";
 import { api } from "../../lib/api.js";
 import { usePreview } from "../../lib/usePreview.js";
 
@@ -22,9 +22,8 @@ const EMPTY_META = { slug: "", name: "", description: "", category: "general", i
 
 function Reference({ fonts }) {
   return (
-    <details className="text-sm">
-      <summary className="cursor-pointer font-medium text-zinc-600 dark:text-zinc-400">Definition reference</summary>
-      <div className="mt-2 space-y-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+    <Disclosure title="Definition reference">
+      <div className="space-y-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
         <p>
           <strong>Nodes:</strong> <code>{`{ type: "box", style, children }`}</code>, <code>{`{ type: "text", text }`}</code>,{" "}
           <code>{`{ type: "image", src }`}</code>. Boxes are flex containers (Satori supports flexbox, not grid). Every node
@@ -45,7 +44,7 @@ function Reference({ fonts }) {
           {fonts.join(", ")}. Emoji render as Twemoji.
         </p>
       </div>
-    </details>
+    </Disclosure>
   );
 }
 

@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Field, Input, Select, Textarea, Toggle } from "./ui.jsx";
+import { ColorPicker, Field, FilePicker, Input, NumberInput, Select, Textarea, Toggle } from "./ui.jsx";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
-const COLOR_HEX = /^#[0-9a-f]{6}$/i;
 
 const readAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -16,10 +15,7 @@ function ImageInput({ value, onChange }) {
   const [error, setError] = useState(null);
   const isDataUri = value?.startsWith("data:");
 
-  const onFile = async (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
+  const onFile = async (file) => {
     if (file.size > MAX_UPLOAD_BYTES) return setError("Image must be 5 MB or smaller");
     if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) return setError("Use PNG, JPEG, GIF or WebP");
     setError(null);
@@ -36,10 +32,7 @@ function ImageInput({ value, onChange }) {
           disabled={isDataUri}
           onChange={(e) => onChange(e.target.value)}
         />
-        <label className="shrink-0 cursor-pointer rounded-lg px-3 py-2 text-sm font-medium ring-1 ring-zinc-300 hover:bg-zinc-50 dark:ring-zinc-700 dark:hover:bg-zinc-800">
-          Upload
-          <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="sr-only" onChange={onFile} />
-        </label>
+        <FilePicker accept="image/png,image/jpeg,image/gif,image/webp" onFile={onFile} className="shrink-0" />
       </div>
       {isDataUri && (
         <div className="flex items-center gap-2 text-xs text-zinc-500">
@@ -65,38 +58,14 @@ function ParamInput({ spec, value, onChange }) {
       );
     case "number":
       return (
-        <Input
-          type="number"
-          min={spec.min}
-          max={spec.max}
-          value={value}
-          onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
-        />
+        <NumberInput min={spec.min} max={spec.max} value={value} onChange={onChange} />
       );
     case "color":
-      return (
-        <div className="flex gap-2">
-          <input
-            type="color"
-            className="h-9 w-11 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent p-0"
-            value={COLOR_HEX.test(value) ? value : "#000000"}
-            onChange={(e) => onChange(e.target.value)}
-          />
-          <Input value={value} onChange={(e) => onChange(e.target.value)} />
-        </div>
-      );
+      return <ColorPicker value={value} onChange={onChange} />;
     case "boolean":
       return <Toggle checked={Boolean(value)} onChange={onChange} />;
     case "enum":
-      return (
-        <Select value={value} onChange={(e) => onChange(e.target.value)}>
-          {spec.options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </Select>
-      );
+      return <Select value={value} onChange={onChange} options={spec.options} />;
     case "image":
       return <ImageInput value={value ?? ""} onChange={onChange} />;
     default:

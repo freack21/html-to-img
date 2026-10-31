@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Alert, Badge, Button, Card, PageHeader, Toggle } from "../../components/ui.jsx";
+import { Alert, Badge, Button, Card, PageHeader, Toggle, useConfirm } from "../../components/ui.jsx";
 import { api, formatDate } from "../../lib/api.js";
 
 export default function Templates() {
+  const confirm = useConfirm();
   const [templates, setTemplates] = useState([]);
   const [error, setError] = useState(null);
 
@@ -19,7 +20,13 @@ export default function Templates() {
   };
 
   const remove = async (t) => {
-    if (!confirm(`Delete template "${t.slug}"? API calls using it will start failing.`)) return;
+    const ok = await confirm({
+      title: `Delete template "${t.name}"?`,
+      description: `API calls using "${t.slug}" will start failing. This cannot be undone.`,
+      confirmLabel: "Delete template",
+      tone: "danger",
+    });
+    if (!ok) return;
     await api(`/admin/templates/${t.id}`, { method: "DELETE" }).catch(setError);
     load();
   };

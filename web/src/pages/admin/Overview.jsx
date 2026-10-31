@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Card, PageHeader, Spinner } from "../../components/ui.jsx";
+import { Alert, Card, Disclosure, PageHeader, Spinner } from "../../components/ui.jsx";
 import { api, formatNumber } from "../../lib/api.js";
 
 function Stat({ label, value, hint }) {
@@ -101,9 +101,8 @@ function DailyChart({ daily }) {
           {hover.day}: <strong>{formatNumber(hover.renders)}</strong> renders
         </div>
       )}
-      <details className="mt-2 text-xs text-zinc-500">
-        <summary className="cursor-pointer">Show as table</summary>
-        <table className="mt-2">
+      <Disclosure title="Show as table" className="mt-2" buttonClassName="text-xs font-normal text-zinc-500">
+        <table className="text-xs text-zinc-500">
           <tbody>
             {data.filter((d) => d.renders).map((d) => (
               <tr key={d.day}>
@@ -113,7 +112,7 @@ function DailyChart({ daily }) {
             ))}
           </tbody>
         </table>
-      </details>
+      </Disclosure>
     </div>
   );
 }

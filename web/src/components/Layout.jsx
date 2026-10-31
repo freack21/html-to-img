@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router";
 import { useAuth } from "../lib/auth.jsx";
+import { ThemeMenu } from "./ThemeMenu.jsx";
 import { cx } from "./ui.jsx";
 
 const navClass = ({ isActive }) =>
@@ -50,6 +51,7 @@ export default function Layout() {
             </NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-1">
+            <ThemeMenu />
             {user ? (
               <>
                 {isAdmin && (

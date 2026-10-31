@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { Logo } from "../components/Layout.jsx";
-import { Alert, Button, Card, Field, Input } from "../components/ui.jsx";
+import { Alert, Button, Card, Field, Input, PasswordInput } from "../components/ui.jsx";
 import { useAuth } from "../lib/auth.jsx";
 import { fieldErrors } from "../lib/usePreview.js";
 
@@ -44,17 +44,17 @@ function useAuthForm(action, initial) {
 
 export function Login() {
   const { user, login } = useAuth();
-  const { bind, error, loading, onSubmit } = useAuthForm(login, { email: "", password: "" });
+  const { bind, error, errors, loading, onSubmit } = useAuthForm(login, { email: "", password: "" });
   if (user) return <Navigate to="/dashboard" replace />;
   return (
     <AuthCard title="Welcome back" subtitle="Log in to your account.">
-      <form onSubmit={onSubmit} className="space-y-4">
-        {error && <Alert>{error.message}</Alert>}
-        <Field label="Email">
-          <Input type="email" autoComplete="email" required {...bind("email")} />
+      <form onSubmit={onSubmit} noValidate className="space-y-4">
+        {error && !error.details.length && <Alert>{error.message}</Alert>}
+        <Field label="Email" error={errors.email}>
+          <Input type="email" autoComplete="email" {...bind("email")} />
         </Field>
-        <Field label="Password">
-          <Input type="password" autoComplete="current-password" required {...bind("password")} />
+        <Field label="Password" error={errors.password}>
+          <PasswordInput autoComplete="current-password" {...bind("password")} />
         </Field>
         <Button type="submit" className="w-full" loading={loading}>
           Log in
@@ -85,16 +85,16 @@ export function Register() {
   }
   return (
     <AuthCard title="Create your account" subtitle="Free plan included. No credit card needed.">
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-4">
         {error && !error.details.length && <Alert>{error.message}</Alert>}
         <Field label="Name" error={errors.name}>
-          <Input autoComplete="name" required {...bind("name")} />
+          <Input autoComplete="name" {...bind("name")} />
         </Field>
         <Field label="Email" error={errors.email}>
-          <Input type="email" autoComplete="email" required {...bind("email")} />
+          <Input type="email" autoComplete="email" {...bind("email")} />
         </Field>
         <Field label="Password" hint="At least 8 characters." error={errors.password}>
-          <Input type="password" autoComplete="new-password" minLength={8} required {...bind("password")} />
+          <PasswordInput autoComplete="new-password" {...bind("password")} />
         </Field>
         <Button type="submit" className="w-full" loading={loading}>
           Create account
