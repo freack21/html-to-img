@@ -136,7 +136,14 @@ export async function provision(env, { fetchImpl = fetch, log = console.log, sle
   log("• Environment variables…");
   const envs = [];
   let adminPassword = null;
-  if (env.ADMIN_EMAIL && (created || env.ADMIN_PASSWORD)) {
+  let setAdmin = Boolean(env.ADMIN_EMAIL) && (created || Boolean(env.ADMIN_PASSWORD));
+  if (env.ADMIN_EMAIL && !setAdmin) {
+    // The admin account is created when the container first boots. If the app has never run
+    // (e.g. an earlier attempt failed before deploying), a fresh password is still safe to set.
+    const details = await request("GET", `/applications/${app.uuid}`);
+    setAdmin = !String(details?.status ?? "").startsWith("running");
+  }
+  if (setAdmin) {
     adminPassword = env.ADMIN_PASSWORD || crypto.randomBytes(12).toString("base64url");
     envs.push({ key: "ADMIN_EMAIL", value: env.ADMIN_EMAIL }, { key: "ADMIN_PASSWORD", value: adminPassword, is_shown_once: true });
   }
@@ -144,6 +151,10 @@ export async function provision(env, { fetchImpl = fetch, log = console.log, sle
   if (envs.length) {
     await request("PATCH", `/applications/${app.uuid}/envs/bulk`, { data: envs.map((e) => ({ is_preview: false, ...e })) });
     log(`  set ${envs.map((e) => e.key).join(", ")}`);
+    if (adminPassword) {
+      // Printed now so a later failure cannot lose it (the env value is hidden in Coolify).
+      log(`  html-to-img admin: ${env.ADMIN_EMAIL} / ${adminPassword}  <- save this now; it is shown only once`);
+    }
   } else {
     log("  nothing to change");
   }
@@ -168,7 +179,7 @@ export async function provision(env, { fetchImpl = fetch, log = console.log, sle
   if (env.DEPLOY === "0") return result;
 
   log("• Deploying (the first build takes a few minutes)…");
-  const queued = await request("GET", `/deploy?uuid=${app.uuid}&force=false`);
+  const queued = await request("POST", `/deploy?uuid=${app.uuid}&force=false`);
   const deploymentUuid = queued?.deployments?.[0]?.deployment_uuid;
   if (!deploymentUuid) throw new ProvisionError(`Coolify did not start a deployment: ${JSON.stringify(queued)}`);
 

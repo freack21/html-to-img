@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { provision, ProvisionError } from "./provision.mjs";
 
 /** In-memory stand-in for the subset of the Coolify API that provision() uses. */
-function fakeCoolify({ deployStatuses = ["in_progress", "finished"], status = 200 } = {}) {
+function fakeCoolify({ deployStatuses = ["in_progress", "finished"], status = 200, appStatus = "exited" } = {}) {
   const state = { projects: [], apps: [], envs: {}, tasks: {}, patches: [], calls: [] };
   let statuses = [...deployStatuses];
   const json = (code, body) => new Response(JSON.stringify(body), { status: code, headers: { "content-type": "application/json" } });
@@ -32,6 +32,7 @@ function fakeCoolify({ deployStatuses = ["in_progress", "finished"], status = 20
       state.apps.push(app);
       return json(201, { uuid: app.uuid });
     }
+    if (init.method === "GET" && (m = /^\/applications\/([\w-]+)$/.exec(path))) return json(200, { uuid: m[1], status: appStatus });
     if (init.method === "PATCH" && (m = /^\/applications\/([\w-]+)$/.exec(path))) {
       state.patches.push(body);
       return json(200, { uuid: m[1] });
@@ -46,7 +47,8 @@ function fakeCoolify({ deployStatuses = ["in_progress", "finished"], status = 20
       state.tasks[m[1]].push(body);
       return json(201, body);
     }
-    if (init.method === "GET" && path.startsWith("/deploy?uuid=")) {
+    if (init.method === "GET" && path.startsWith("/deploy?")) return json(405, { message: "This endpoint has changed to a POST request." });
+    if (init.method === "POST" && path.startsWith("/deploy?uuid=")) {
       statuses = [...deployStatuses];
       return json(200, { deployments: [{ deployment_uuid: "dep-1", resource_uuid: "app-1", message: "queued" }] });
     }
@@ -78,8 +80,8 @@ test("first run creates everything, sets admin env and deploys", async () => {
   assert.equal(result.webhookPath, "/api/v1/deploy?uuid=app-1&force=false");
 });
 
-test("re-running reuses resources and does not reset the admin password", async () => {
-  const { state, fetchImpl } = fakeCoolify();
+test("re-running reuses resources and keeps the password of a running app", async () => {
+  const { state, fetchImpl } = fakeCoolify({ appStatus: "running:healthy" });
   const env = { ...base, ADMIN_EMAIL: "me@example.com", DEPLOY: "0" };
   await provision(env, { fetchImpl, ...quiet });
   const second = await provision(env, { fetchImpl, ...quiet });
@@ -90,7 +92,22 @@ test("re-running reuses resources and does not reset the admin password", async 
   assert.equal(state.envs["app-1"].filter((e) => e.key === "ADMIN_PASSWORD").length, 1);
   assert.equal(second.adminPassword, null);
   assert.equal(second.deployment, null);
-  assert.ok(!state.calls.some((c) => c.startsWith("GET /deploy")));
+  assert.ok(!state.calls.some((c) => c.includes("/deploy?")));
+});
+
+test("re-running after a failed first deploy issues a new admin password and prints it early", async () => {
+  const { state, fetchImpl } = fakeCoolify({ appStatus: "exited" });
+  const lines = [];
+  await provision({ ...base, ADMIN_EMAIL: "me@example.com", DEPLOY: "0" }, { fetchImpl, ...quiet });
+  const second = await provision({ ...base, ADMIN_EMAIL: "me@example.com" }, { fetchImpl, ...quiet, log: (l) => lines.push(l) });
+
+  const passwords = state.envs["app-1"].filter((e) => e.key === "ADMIN_PASSWORD").map((e) => e.value);
+  assert.equal(passwords.length, 2);
+  assert.equal(second.adminPassword, passwords[1]);
+  const printed = lines.findIndex((l) => l.includes(second.adminPassword));
+  const deploying = lines.findIndex((l) => l.includes("Deploying"));
+  assert.ok(printed >= 0 && printed < deploying, "password is printed before deploying");
+  assert.ok(state.calls.includes("POST /deploy?uuid=app-1&force=false"));
 });
 
 test("a failed deployment is reported", async () => {
