@@ -58,20 +58,21 @@ At your DNS provider (Cloudflare, Niagahoster, Namecheap, …) add:
 | --- | --- | --- |
 | `A` | `img` (for `img.example.com`) | your server's public IP |
 
-If you use Cloudflare, set the record to **DNS only** (grey cloud) for the first deploy so Let's Encrypt can issue the certificate. You can turn the proxy back on afterwards with SSL mode **Full (strict)**.
+If you use Cloudflare, set the record to **DNS only** (grey cloud) for the first deploy so Let's Encrypt can issue the certificate. You can turn the proxy (orange cloud) on afterwards with SSL/TLS mode **Full (strict)**. The app reads the visitor's real IP from `CF-Connecting-IP`, but only for requests that really arrive from Cloudflare's IP ranges, so guest quotas stay per visitor.
 
 ## 5. Create and deploy the app
 
 ```bash
-sudo bash setup.sh deploy
+sudo bash setup.sh deploy --domain img.example.com --admin-email you@example.com
 ```
 
-The script asks for:
+The script asks only for the **Coolify API token** from step 3 (input is hidden). The flags are optional:
 
-- **Coolify API token**: from step 3. Input is hidden.
-- **App domain**: e.g. `img.example.com`. Leave it empty to get a temporary `*.sslip.io` address.
-- **Admin email**: the first html-to-img admin. A password is generated and printed once.
-- **Docker Hub mirror**: answer `y` only if a previous build failed with `429 Too Many Requests`.
+- `--domain`: the app's domain. Without it, the first run asks, and an empty answer gives a temporary `*.sslip.io` address.
+- `--admin-email`: creates the first html-to-img admin. A password is generated and printed once. Only needed on the very first deploy.
+- `--mirror`: build from `mirror.gcr.io`. Only needed if a build failed with `429 Too Many Requests`.
+
+The token and domain are saved to `/etc/html-to-img/coolify.env` (readable by root only). Later runs of `sudo bash setup.sh deploy` ask nothing. Use `--domain <new>` to switch domains, or `--reset` to forget the saved token.
 
 It then uses the Coolify API to:
 
@@ -83,7 +84,7 @@ It then uses the Coolify API to:
 
 When it prints `✅ html-to-img is configured and deployed`, open `https://img.example.com`, log in with the printed admin credentials, and change the password under **Dashboard → Account**.
 
-Running `setup.sh deploy` again is safe. It reuses the existing project, app and backup task, updates the domain, redeploys, and doesn't reset the admin password. To deploy another branch, add `--branch <name>`.
+Running `setup.sh deploy` again is safe. It reuses the existing app and backup task, applies the domain, redeploys, and doesn't reset the admin password. To deploy another branch, add `--branch <name>`.
 
 <details>
 <summary>Prefer clicking? The same setup by hand</summary>
@@ -172,4 +173,5 @@ Set these under the application's **Environment Variables**, then redeploy:
 | HTTPS certificate error | DNS doesn't point to the server yet, or Cloudflare proxy is on; see step 4. Coolify retries automatically |
 | `502 Bad Gateway` | The container is starting or crashed; check **Logs** |
 | Admin login doesn't work | The admin is only created if the email had no account. Check the logs for `Created admin account`, or use the Terminal command above |
-| All guests share one daily quota | A proxy in front of Coolify hides client IPs; adjust `TRUST_PROXY` |
+| All guests share one daily quota | A proxy other than Cloudflare hides client IPs; adjust `TRUST_PROXY` |
+| Redirect loop with Cloudflare | Set Cloudflare SSL/TLS mode to **Full (strict)**, not Flexible |

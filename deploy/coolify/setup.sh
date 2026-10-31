@@ -5,22 +5,33 @@
 #   curl -fsSL https://raw.githubusercontent.com/freack21/html-to-img/main/deploy/coolify/setup.sh -o setup.sh
 #   sudo bash setup.sh check     # read-only: is this server ready for Coolify?
 #   sudo bash setup.sh install   # check, then install Coolify with the official script
-#   sudo bash setup.sh deploy    # create + deploy html-to-img through the Coolify API
+#   sudo bash setup.sh deploy    # create/update + deploy html-to-img through the Coolify API
 #
-# Options: --branch <git branch> (default: main), --project <Coolify project> (default: DIGISION-DEV),
-#          --yes (skip confirmations)
+# deploy asks for the API token and domain once and remembers them in /etc/html-to-img/coolify.env.
+# Options: --domain <host>  --admin-email <email>  --mirror (use mirror.gcr.io for the build image)
+#          --branch <git branch> (default: main)  --project <Coolify project> (default: DIGISION-DEV)
+#          --reset (forget saved token/domain)  --yes (skip confirmations)
 set -euo pipefail
 
 REPO_RAW="https://raw.githubusercontent.com/freack21/html-to-img"
+CONFIG="/etc/html-to-img/coolify.env"
 BRANCH="main"
 PROJECT="DIGISION-DEV"
 ASSUME_YES=0
+OPT_DOMAIN=""
+OPT_ADMIN_EMAIL=""
+OPT_MIRROR=0
+OPT_RESET=0
 COMMAND="${1:-help}"
 shift || true
 while [ $# -gt 0 ]; do
   case "$1" in
     --branch) BRANCH="$2"; shift 2 ;;
     --project) PROJECT="$2"; shift 2 ;;
+    --domain) OPT_DOMAIN="$2"; shift 2 ;;
+    --admin-email) OPT_ADMIN_EMAIL="$2"; shift 2 ;;
+    --mirror) OPT_MIRROR=1; shift ;;
+    --reset) OPT_RESET=1; shift ;;
     --yes) ASSUME_YES=1; shift ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -162,20 +173,45 @@ deploy() {
   require_root
   coolify_installed || die "Coolify is not running here. Run: sudo bash $0 install"
 
-  local ip domain
+  local ip domain first_run=0 saved_domain=""
   ip=$(public_ip)
   bold "Deploy html-to-img through Coolify (branch: $BRANCH)"
-  read -r -s -p "Coolify API token (input hidden): " COOLIFY_TOKEN </dev/tty
-  echo
-  [ -n "$COOLIFY_TOKEN" ] || die "A token is required."
-  read -r -p "App domain, e.g. img.example.com (leave empty for a temporary sslip.io domain): " domain </dev/tty
-  read -r -p "Admin email for html-to-img (leave empty to skip): " ADMIN_EMAIL </dev/tty
-  read -r -p "Use the Docker Hub mirror for the build image? Only needed after '429 Too Many Requests' [y/N] " mirror </dev/tty
 
-  if [ -n "$domain" ]; then
+  [ "$OPT_RESET" = 1 ] && rm -f "$CONFIG"
+  COOLIFY_TOKEN="${COOLIFY_TOKEN:-}"
+  if [ -f "$CONFIG" ]; then
+    # shellcheck disable=SC1090
+    . "$CONFIG"
+    saved_domain="${APP_DOMAIN:-}"
+    ok "Using saved settings from $CONFIG (run with --reset to change the token)"
+  else
+    first_run=1
+  fi
+
+  if [ -z "$COOLIFY_TOKEN" ]; then
+    read -r -s -p "Coolify API token (input hidden): " COOLIFY_TOKEN </dev/tty
+    echo
+    [ -n "$COOLIFY_TOKEN" ] || die "A token is required."
+  fi
+  if [ -n "$OPT_DOMAIN" ]; then
+    domain="$OPT_DOMAIN"
+  elif [ "$first_run" = 1 ]; then
+    read -r -p "App domain, e.g. img.example.com (leave empty for a temporary sslip.io domain): " domain </dev/tty
+  else
+    domain="$saved_domain"
+  fi
+  domain="${domain#http://}"; domain="${domain#https://}"; domain="${domain%%/*}"
+  # Only needed on the very first deploy: --admin-email you@example.com
+  ADMIN_EMAIL="$OPT_ADMIN_EMAIL"
+
+  if [ -n "$domain" ] && [ "$domain" != "$saved_domain" ]; then
     local resolved
     resolved=$(getent ahostsv4 "$domain" 2>/dev/null | awk 'NR==1 {print $1}')
-    if [ "$resolved" != "$ip" ]; then
+    if [ "$resolved" = "$ip" ]; then
+      ok "$domain points to this server"
+    elif curl -fsSI --max-time 8 "http://$domain/" 2>/dev/null | grep -qi '^server: cloudflare'; then
+      ok "$domain is proxied by Cloudflare (orange cloud); make sure its origin is $ip"
+    else
       printf '\033[33m! %s resolves to "%s", not this server (%s).\033[0m\n' "$domain" "${resolved:-nothing}" "$ip"
       echo "  HTTPS certificates will fail until the DNS A record points here (changes can take a few minutes)."
       confirm "Continue anyway?" || die "Cancelled. Fix DNS, then run this again."
@@ -204,12 +240,16 @@ deploy() {
   export COOLIFY_TOKEN ADMIN_EMAIL COOLIFY_SOURCE_HINT
   export COOLIFY_URL="http://127.0.0.1:8000" APP_DOMAIN="$domain" GIT_BRANCH="$BRANCH" PROJECT_NAME="$PROJECT"
   export NODE_IMAGE=""
-  [[ "${mirror:-}" =~ ^[Yy]$ ]] && NODE_IMAGE="mirror.gcr.io/library/node:22-bookworm-slim"
+  [ "$OPT_MIRROR" = 1 ] && NODE_IMAGE="mirror.gcr.io/library/node:22-bookworm-slim"
 
   # Values are passed by name (-e VAR), so the token never appears in the process list.
   docker run --rm --network host -v "$WORKDIR:/w:ro" \
     -e COOLIFY_URL -e COOLIFY_TOKEN -e APP_DOMAIN -e ADMIN_EMAIL -e GIT_BRANCH -e PROJECT_NAME -e NODE_IMAGE -e COOLIFY_SOURCE_HINT \
     "$node_image" node /w/provision.mjs
+
+  mkdir -p "$(dirname "$CONFIG")"
+  ( umask 077; printf 'COOLIFY_TOKEN=%q\nAPP_DOMAIN=%q\n' "$COOLIFY_TOKEN" "$domain" > "$CONFIG" )
+  ok "Saved token and domain to $CONFIG (root-only). Next time just run: bash $0 deploy"
   echo "  (In the webhook URL above, <your Coolify URL> is http://${ip}:8000 or your Coolify domain.)"
 }
 
@@ -218,6 +258,6 @@ case "$COMMAND" in
   install) install ;;
   deploy) deploy ;;
   *)
-    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
     ;;
 esac
