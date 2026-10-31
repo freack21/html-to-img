@@ -75,7 +75,7 @@ The script asks for:
 
 It then uses the Coolify API to:
 
-1. create a project and an application from `https://github.com/freack21/html-to-img` (branch `main`, build pack **Docker Compose**, file `/docker-compose.yml`);
+1. create the application in the Coolify project **DIGISION-DEV** (created if missing; change with `--project <name>`) from `https://github.com/freack21/html-to-img` (branch `main`, build pack **Docker Compose**, file `/docker-compose.yml`);
 2. attach your domain (routed to container port 3003, with HTTPS);
 3. set the admin environment variables;
 4. schedule a daily database backup (`backup-db`, 03:00);

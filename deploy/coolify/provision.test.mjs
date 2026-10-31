@@ -28,6 +28,7 @@ function fakeCoolify({ deployStatuses = ["in_progress", "finished"], status = 20
     if (init.method === "POST" && path === "/applications/public") {
       assert.equal(body.build_pack, "dockercompose");
       assert.equal(body.server_uuid, "srv-1");
+      state.lastAppBody = body;
       const app = { uuid: `app-${state.apps.length + 1}`, name: body.name, git_repository: "freack21/html-to-img" };
       state.apps.push(app);
       return json(201, { uuid: app.uuid });
@@ -65,7 +66,7 @@ test("first run creates everything, sets admin env and deploys", async () => {
   const { state, fetchImpl } = fakeCoolify();
   const result = await provision({ ...base, APP_DOMAIN: "https://img.example.com/", ADMIN_EMAIL: "me@example.com" }, { fetchImpl, ...quiet });
 
-  assert.equal(state.projects.length, 1);
+  assert.deepEqual(state.projects.map((p) => p.name), ["DIGISION-DEV"]);
   assert.equal(state.apps.length, 1);
   assert.deepEqual(state.patches[0].docker_compose_domains, [{ name: "app", domain: "https://img.example.com:3003" }]);
   assert.equal(state.patches[0].docker_compose_location, "/docker-compose.yml");
@@ -84,9 +85,11 @@ test("re-running reuses resources and keeps the password of a running app", asyn
   const { state, fetchImpl } = fakeCoolify({ appStatus: "running:healthy" });
   const env = { ...base, ADMIN_EMAIL: "me@example.com", DEPLOY: "0" };
   await provision(env, { fetchImpl, ...quiet });
+  const callsBefore = state.calls.length;
   const second = await provision(env, { fetchImpl, ...quiet });
 
   assert.equal(state.projects.length, 1);
+  assert.ok(!state.calls.slice(callsBefore).some((c) => c.includes("/projects")), "existing app: project untouched");
   assert.equal(state.apps.length, 1);
   assert.equal(state.tasks["app-1"].length, 1);
   assert.equal(state.envs["app-1"].filter((e) => e.key === "ADMIN_PASSWORD").length, 1);
@@ -127,4 +130,12 @@ test("API access errors explain how to fix them", async () => {
     throw Object.assign(new TypeError("fetch failed"), { cause: { code: "ECONNREFUSED" } });
   };
   await assert.rejects(provision(base, { fetchImpl: offline, ...quiet }), /Cannot reach Coolify.*ECONNREFUSED/);
+});
+
+test("a new application goes into an existing project chosen by name", async () => {
+  const { state, fetchImpl } = fakeCoolify();
+  state.projects.push({ uuid: "prj-existing", name: "Team Apps" });
+  await provision({ ...base, PROJECT_NAME: "Team Apps", DEPLOY: "0" }, { fetchImpl, ...quiet });
+  assert.equal(state.projects.length, 1);
+  assert.equal(state.lastAppBody.project_uuid, "prj-existing");
 });

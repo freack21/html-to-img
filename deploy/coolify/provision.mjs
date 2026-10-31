@@ -10,7 +10,7 @@
 //   ADMIN_PASSWORD  Only applied when the application is created (or when given explicitly)
 //   GIT_REPOSITORY  default https://github.com/freack21/html-to-img
 //   GIT_BRANCH      default main
-//   PROJECT_NAME    default html-to-img
+//   PROJECT_NAME    project for a new application, default DIGISION-DEV
 //   APP_NAME        default html-to-img
 //   SERVER_UUID     default: the "localhost" server, else the first server
 //   NODE_IMAGE      base image override (e.g. mirror.gcr.io/library/node:22-bookworm-slim)
@@ -89,7 +89,7 @@ export async function provision(env, { fetchImpl = fetch, log = console.log, sle
   const request = createClient({ baseUrl: env.COOLIFY_URL, token: env.COOLIFY_TOKEN, fetchImpl, sourceHint: env.COOLIFY_SOURCE_HINT });
   const repo = env.GIT_REPOSITORY || "https://github.com/freack21/html-to-img";
   const branch = env.GIT_BRANCH || "main";
-  const projectName = env.PROJECT_NAME || "html-to-img";
+  const projectName = env.PROJECT_NAME || "DIGISION-DEV";
   const appName = env.APP_NAME || "html-to-img";
   const domain = (env.APP_DOMAIN || "").trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
 
@@ -97,21 +97,20 @@ export async function provision(env, { fetchImpl = fetch, log = console.log, sle
   const server = pickServer(await request("GET", "/servers"), env.SERVER_UUID);
   log(`  server: ${server.name} (${server.uuid})`);
 
-  log("• Project…");
-  const projects = await request("GET", "/projects");
-  let project = (projects || []).find((p) => p.name === projectName);
-  if (!project) {
-    project = await request("POST", "/projects", { name: projectName, description: "Template-driven image generation" });
-    log(`  created project ${projectName}`);
-  } else {
-    log(`  using existing project ${projectName}`);
-  }
-
   log("• Application…");
   const apps = await request("GET", "/applications");
   let app = (apps || []).find((a) => a.name === appName && normalizeRepo(a.git_repository).endsWith(normalizeRepo(repo).replace(/^https?:\/\/github\.com\//, "")));
   const created = !app;
   if (created) {
+    // The project only matters when creating the app; an existing app stays wherever it lives.
+    const projects = await request("GET", "/projects");
+    let project = (projects || []).find((p) => p.name === projectName);
+    if (!project) {
+      project = await request("POST", "/projects", { name: projectName, description: "DIGISION development apps" });
+      log(`  created project ${projectName}`);
+    } else {
+      log(`  using project ${projectName}`);
+    }
     app = await request("POST", "/applications/public", {
       project_uuid: project.uuid,
       server_uuid: server.uuid,
@@ -123,7 +122,7 @@ export async function provision(env, { fetchImpl = fetch, log = console.log, sle
       description: "html-to-img engine, API and dashboard",
       instant_deploy: false,
     });
-    log(`  created application ${appName} (${app.uuid})`);
+    log(`  created application ${appName} (${app.uuid}) in project ${projectName}`);
   } else {
     log(`  using existing application ${appName} (${app.uuid})`);
   }

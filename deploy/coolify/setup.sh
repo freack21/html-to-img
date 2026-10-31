@@ -7,17 +7,20 @@
 #   sudo bash setup.sh install   # check, then install Coolify with the official script
 #   sudo bash setup.sh deploy    # create + deploy html-to-img through the Coolify API
 #
-# Options: --branch <git branch> (default: main), --yes (skip confirmations)
+# Options: --branch <git branch> (default: main), --project <Coolify project> (default: DIGISION-DEV),
+#          --yes (skip confirmations)
 set -euo pipefail
 
 REPO_RAW="https://raw.githubusercontent.com/freack21/html-to-img"
 BRANCH="main"
+PROJECT="DIGISION-DEV"
 ASSUME_YES=0
 COMMAND="${1:-help}"
 shift || true
 while [ $# -gt 0 ]; do
   case "$1" in
     --branch) BRANCH="$2"; shift 2 ;;
+    --project) PROJECT="$2"; shift 2 ;;
     --yes) ASSUME_YES=1; shift ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -199,13 +202,13 @@ deploy() {
   # The API call goes through docker-proxy, so Coolify sees the "coolify" network's gateway as the caller.
   COOLIFY_SOURCE_HINT=$(docker network inspect coolify --format '{{range .IPAM.Config}}{{.Subnet}} {{end}}' 2>/dev/null | xargs | tr ' ' ',')
   export COOLIFY_TOKEN ADMIN_EMAIL COOLIFY_SOURCE_HINT
-  export COOLIFY_URL="http://127.0.0.1:8000" APP_DOMAIN="$domain" GIT_BRANCH="$BRANCH"
+  export COOLIFY_URL="http://127.0.0.1:8000" APP_DOMAIN="$domain" GIT_BRANCH="$BRANCH" PROJECT_NAME="$PROJECT"
   export NODE_IMAGE=""
   [[ "${mirror:-}" =~ ^[Yy]$ ]] && NODE_IMAGE="mirror.gcr.io/library/node:22-bookworm-slim"
 
   # Values are passed by name (-e VAR), so the token never appears in the process list.
   docker run --rm --network host -v "$WORKDIR:/w:ro" \
-    -e COOLIFY_URL -e COOLIFY_TOKEN -e APP_DOMAIN -e ADMIN_EMAIL -e GIT_BRANCH -e NODE_IMAGE -e COOLIFY_SOURCE_HINT \
+    -e COOLIFY_URL -e COOLIFY_TOKEN -e APP_DOMAIN -e ADMIN_EMAIL -e GIT_BRANCH -e PROJECT_NAME -e NODE_IMAGE -e COOLIFY_SOURCE_HINT \
     "$node_image" node /w/provision.mjs
   echo "  (In the webhook URL above, <your Coolify URL> is http://${ip}:8000 or your Coolify domain.)"
 }
@@ -215,6 +218,6 @@ case "$COMMAND" in
   install) install ;;
   deploy) deploy ;;
   *)
-    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
     ;;
 esac
