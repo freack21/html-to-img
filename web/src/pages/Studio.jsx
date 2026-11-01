@@ -60,25 +60,30 @@ function TemplateCard({ template, selected, onSelect, showPremium }) {
       onClick={() => onSelect(template.slug)}
       aria-pressed={selected}
       className={cx(
-        "group flex shrink-0 flex-col overflow-hidden rounded-xl text-left ring-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
-        "w-36 lg:w-full",
+        "group relative flex w-40 shrink-0 flex-col rounded-xl p-1.5 text-left ring-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 lg:w-full",
         selected
           ? "bg-violet-50 ring-2 ring-violet-500 dark:bg-violet-500/10"
-          : "bg-white ring-zinc-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-zinc-300 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:ring-zinc-700",
+          : "bg-white ring-zinc-200 hover:ring-zinc-300 hover:shadow-md hover:shadow-zinc-900/5 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:ring-zinc-700",
       )}
     >
-      <div className="checkerboard flex h-20 items-center justify-center overflow-hidden p-2 lg:h-24">
+      {/* Fixed 4:3 frame; the whole thumbnail stays visible whatever the template's aspect ratio. */}
+      <div className="flex aspect-[4/3] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100 p-2.5 dark:bg-zinc-800/70">
         <img
           src={`/api/v1/templates/${template.slug}/thumbnail.png?v=${template.version}`}
           alt=""
           loading="lazy"
-          className="max-h-16 max-w-full object-contain drop-shadow-sm transition group-hover:scale-[1.03] lg:max-h-20"
+          className="max-h-full max-w-full rounded-[3px] object-contain shadow-sm ring-1 ring-zinc-900/5 transition duration-300 group-hover:scale-105"
         />
       </div>
-      <div className="flex items-center justify-between gap-1 px-2.5 py-2">
-        <span className="truncate text-xs font-medium">{template.name}</span>
+      <div className="flex min-w-0 items-center gap-1.5 px-1 pt-2 pb-0.5">
+        <span className="min-w-0 flex-1 truncate text-xs font-medium">{template.name}</span>
         {showPremium && template.isPremium && <Badge tone="amber">Pro</Badge>}
       </div>
+      {selected && (
+        <span className="absolute top-2.5 right-2.5 grid size-5 place-items-center rounded-full bg-violet-600 text-white shadow ring-2 ring-white dark:ring-zinc-900">
+          <Icon name="check" className="size-3" />
+        </span>
+      )}
     </button>
   );
 }
@@ -111,7 +116,7 @@ function TemplateBrowser({ templates, selected, onSelect, showPremium }) {
             className="w-full rounded-lg border-0 bg-zinc-100 py-2 pr-3 pl-9 text-sm placeholder:text-zinc-400 focus:bg-white focus:ring-2 focus:ring-violet-500 focus:outline-none dark:bg-zinc-800/80 dark:focus:bg-zinc-900 [&::-webkit-search-cancel-button]:hidden"
           />
         </div>
-        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1" role="group" aria-label="Filter by category">
+        <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1.5rem),transparent)]" role="group" aria-label="Filter by category">
           {categories.map((c) => (
             <button
               key={c}
@@ -131,7 +136,7 @@ function TemplateBrowser({ templates, selected, onSelect, showPremium }) {
         </div>
       </div>
       {/* Desktop: scrolling 2-column grid. Mobile: horizontal strip. */}
-      <div className="flex gap-2 overflow-x-auto px-4 pb-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:content-start lg:overflow-x-visible lg:overflow-y-auto">
+      <div className="flex gap-2.5 overflow-x-auto px-4 pt-1 pb-4 lg:grid lg:min-h-0 lg:flex-1 lg:auto-rows-max lg:grid-cols-2 lg:content-start lg:overflow-x-visible lg:overflow-y-auto">
         {filtered.map((t) => (
           <TemplateCard key={t.slug} template={t} selected={t.slug === selected} onSelect={onSelect} showPremium={showPremium} />
         ))}
