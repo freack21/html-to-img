@@ -3,6 +3,7 @@ import http from "node:http";
 import https from "node:https";
 import net from "node:net";
 import { ValidationError } from "../lib/errors.js";
+import { normalizeJpegOrientation } from "./orientation.js";
 
 const blockList = new net.BlockList();
 for (const [addr, prefix] of [
@@ -54,6 +55,13 @@ export function sniffImage(buffer) {
 function toDataUri(buffer) {
   const mime = sniffImage(buffer);
   if (!mime) throw new ValidationError("Unsupported image format (use PNG, JPEG, GIF or WebP)");
+  if (mime === "image/jpeg") {
+    try {
+      buffer = normalizeJpegOrientation(buffer);
+    } catch {
+      // Undecodable by jpeg-js (e.g. progressive edge cases): keep the original bytes.
+    }
+  }
   return `data:${mime};base64,${buffer.toString("base64")}`;
 }
 

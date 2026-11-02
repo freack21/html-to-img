@@ -7,7 +7,9 @@ import { createRenderer, parseDefinition } from "../src/engine/index.js";
 import { buildElement, evaluateCondition, resolveValue } from "../src/engine/build.js";
 import { emojiCode } from "../src/engine/emoji.js";
 import { createImageLoader, isBlockedAddress, sniffImage } from "../src/engine/images.js";
+import { jpegOrientation, normalizeJpegOrientation } from "../src/engine/orientation.js";
 import { resolveParams } from "../src/engine/params.js";
+import jpeg from "jpeg-js";
 import { clientIp, clientKey, isCloudflare } from "../src/lib/client.js";
 
 const TEMPLATES_DIR = path.join(import.meta.dirname, "../templates");
@@ -223,4 +225,70 @@ test("watermarking keeps full-height templates filling the canvas", async () => 
     const alphaAt = (x, y) => pixels[(y * 100 + x) * 4 + 3];
     assert.equal(alphaAt(5, 95), 255, `bottom-left pixel is opaque (watermark: ${watermark})`);
   }
+});
+
+// 32x48 JPEG: top half red, bottom half blue, tagged with an EXIF orientation.
+function orientedJpeg(orientation, { littleEndian = false } = {}) {
+  const width = 32;
+  const height = 48;
+  const data = Buffer.alloc(width * height * 4);
+  for (let i = 0; i < width * height; i++) {
+    const top = i < (width * height) / 2;
+    data.set(top ? [255, 0, 0, 255] : [0, 0, 255, 255], i * 4);
+  }
+  const plain = jpeg.encode({ data, width, height }, 95).data;
+  const tiff = Buffer.alloc(26);
+  const u16 = (v, at) => (littleEndian ? tiff.writeUInt16LE(v, at) : tiff.writeUInt16BE(v, at));
+  const u32 = (v, at) => (littleEndian ? tiff.writeUInt32LE(v, at) : tiff.writeUInt32BE(v, at));
+  tiff.write(littleEndian ? "II" : "MM", 0, "ascii");
+  u16(42, 2);
+  u32(8, 4); // offset of IFD0
+  u16(1, 8); // one entry: Orientation (SHORT, count 1)
+  u16(0x0112, 10);
+  u16(3, 12);
+  u32(1, 14);
+  u16(orientation, 18);
+  const payload = Buffer.concat([Buffer.from("Exif\0\0", "binary"), tiff]);
+  const header = Buffer.alloc(4);
+  header.writeUInt16BE(0xffe1, 0);
+  header.writeUInt16BE(payload.length + 2, 2);
+  return Buffer.concat([plain.subarray(0, 2), header, payload, plain.subarray(2)]);
+}
+
+function colorAt(buffer, x, y) {
+  const img = jpeg.decode(buffer, { useTArray: true });
+  const i = (y * img.width + x) * 4;
+  return { width: img.width, height: img.height, red: img.data[i] > 200 && img.data[i + 2] < 60, blue: img.data[i + 2] > 200 && img.data[i] < 60 };
+}
+
+test("jpegOrientation reads the EXIF tag in both byte orders", () => {
+  assert.equal(jpegOrientation(orientedJpeg(6)), 6);
+  assert.equal(jpegOrientation(orientedJpeg(8, { littleEndian: true })), 8);
+  assert.equal(jpegOrientation(orientedJpeg(1)), 1);
+  assert.equal(jpegOrientation(Buffer.from([0xff, 0xd8, 0xff, 0xd9])), 1);
+});
+
+test("normalizeJpegOrientation rotates pixels upright and drops the tag", () => {
+  // 6 = rotate 90° clockwise: the red top half ends up on the right.
+  const cw = normalizeJpegOrientation(orientedJpeg(6));
+  assert.equal(jpegOrientation(cw), 1);
+  assert.deepEqual(colorAt(cw, 40, 16), { width: 48, height: 32, red: true, blue: false });
+  assert.equal(colorAt(cw, 8, 16).blue, true);
+  // 8 = rotate 90° counter-clockwise: red on the left.
+  const ccw = normalizeJpegOrientation(orientedJpeg(8));
+  assert.equal(colorAt(ccw, 8, 16).red, true);
+  assert.equal(colorAt(ccw, 40, 16).blue, true);
+  // 3 = rotate 180°: red at the bottom, size unchanged.
+  const flipped = normalizeJpegOrientation(orientedJpeg(3));
+  assert.deepEqual(colorAt(flipped, 16, 40), { width: 32, height: 48, red: true, blue: false });
+  // Already upright: bytes untouched.
+  const upright = orientedJpeg(1);
+  assert.equal(normalizeJpegOrientation(upright), upright);
+});
+
+test("image loader serves rotated JPEG data URIs upright", async () => {
+  const load = createImageLoader();
+  const uri = await load(`data:image/jpeg;base64,${orientedJpeg(6).toString("base64")}`);
+  const out = Buffer.from(uri.split(",")[1], "base64");
+  assert.equal(colorAt(out, 0, 0).width, 48);
 });
