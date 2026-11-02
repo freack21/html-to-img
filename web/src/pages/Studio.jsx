@@ -393,7 +393,7 @@ export default function Studio() {
   }
 
   return (
-    <div className="h-full overflow-y-auto pb-28 lg:grid lg:grid-cols-[19rem_minmax(0,1fr)_22rem] lg:overflow-hidden lg:pb-0">
+    <div className="pb-32 lg:grid lg:h-full lg:grid-cols-[19rem_minmax(0,1fr)_22rem] lg:overflow-hidden lg:pb-0">
       {/* Templates */}
       <aside aria-label="Templates" className="border-b border-zinc-200 bg-white lg:min-h-0 lg:border-r lg:border-b-0 dark:border-zinc-800 dark:bg-zinc-950">
         {templates ? (

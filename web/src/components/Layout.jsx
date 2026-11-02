@@ -217,7 +217,7 @@ export default function Layout({ fullBleed = false }) {
   };
 
   return (
-    <div className={cx("flex flex-col", fullBleed ? "h-dvh" : "min-h-dvh")}>
+    <div className={cx("flex flex-col", fullBleed ? "min-h-dvh lg:h-dvh" : "min-h-dvh")}>
       <a href="#main" className="sr-only z-50 rounded-lg bg-violet-600 px-3 py-2 text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         Skip to content
       </a>
@@ -265,7 +265,7 @@ export default function Layout({ fullBleed = false }) {
         </div>
       </header>
       <MobileNav open={menuOpen} onClose={() => setMenuOpen(false)} user={user} isAdmin={isAdmin} onLogout={onLogout} />
-      <main id="main" className={cx("flex-1", fullBleed ? "min-h-0" : "mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10")}>
+      <main id="main" className={cx("flex-1", fullBleed ? "lg:min-h-0" : "mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10")}>
         <Outlet />
       </main>
       {!fullBleed && <Footer />}

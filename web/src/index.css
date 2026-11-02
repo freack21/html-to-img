@@ -56,6 +56,17 @@
   }
 }
 
+/*
+ * iOS Safari zooms into any focused field under 16px and stays zoomed afterwards.
+ * Unlayered, so it beats the text-sm/text-xs utilities on touch devices only.
+ */
+@media (pointer: coarse) {
+  input,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Horizontal scrollers (chips) that should scroll without a visible bar. */
 .no-scrollbar {
   scrollbar-width: none;
