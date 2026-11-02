@@ -2,6 +2,9 @@ import { useState } from "react";
 import { ColorPicker, Field, FilePicker, Input, NumberInput, Select, Textarea, Toggle } from "./ui.jsx";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+// Phone photos are big; JPEGs get re-encoded smaller before upload, so accept more.
+const MAX_JPEG_INPUT_BYTES = 25 * 1024 * 1024;
+const MAX_SIDE = 2048;
 
 const readAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -11,15 +14,38 @@ const readAsDataUrl = (file) =>
     reader.readAsDataURL(file);
   });
 
+/**
+ * Redraws a JPEG upright (browsers apply its EXIF orientation when decoding; the
+ * renderer does not) and no larger than MAX_SIDE, returning a JPEG data URI.
+ */
+async function normalizeJpeg(file) {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const ratio = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * ratio);
+  canvas.height = Math.round(bitmap.height * ratio);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
 function ImageInput({ value, onChange }) {
   const [error, setError] = useState(null);
   const isDataUri = value?.startsWith("data:");
 
   const onFile = async (file) => {
-    if (file.size > MAX_UPLOAD_BYTES) return setError("Image must be 5 MB or smaller");
     if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) return setError("Use PNG, JPEG, GIF or WebP");
+    const isJpeg = file.type === "image/jpeg";
+    if (file.size > (isJpeg ? MAX_JPEG_INPUT_BYTES : MAX_UPLOAD_BYTES)) {
+      return setError(`Image must be ${isJpeg ? 25 : 5} MB or smaller`);
+    }
     setError(null);
-    onChange(await readAsDataUrl(file));
+    try {
+      // Fall back to the raw file if the browser can't decode it; the server also fixes orientation.
+      onChange(isJpeg ? await normalizeJpeg(file).catch(() => readAsDataUrl(file)) : await readAsDataUrl(file));
+    } catch {
+      setError("Could not read this image");
+    }
   };
 
   return (
