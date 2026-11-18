@@ -4,6 +4,7 @@ import { readCookie, requireUser, SESSION_COOKIE, sessionCookieOptions } from ".
 import { clientId } from "../lib/client.js";
 import { HttpError } from "../lib/errors.js";
 import { rateLimit } from "../lib/rate-limit.js";
+import { buildOpenApi } from "../services/openapi.js";
 import { listPlans } from "../services/plans.js";
 import { listUserRenders, policyFor, usageFor } from "../services/renders.js";
 import { getSettings } from "../services/settings.js";
@@ -62,6 +63,17 @@ export function accountRoutes({ db, config, freeLimiter }) {
     const template = getTemplateBySlug(db, req.params.slug);
     if (!template?.isActive) throw new HttpError(404, "Template not found");
     res.json({ success: true, data: publicTemplate(template) });
+  });
+
+  router.get("/openapi.json", (req, res) => {
+    const settings = getSettings(db);
+    const spec = buildOpenApi({
+      templates: listTemplates(db, { activeOnly: true }),
+      baseUrl: config.publicUrl || `${req.protocol}://${req.get("host")}`,
+      pricingEnabled: settings.pricingEnabled,
+      freeRendersPerMinute: settings.freeRendersPerMinute,
+    });
+    res.set("Cache-Control", "public, max-age=60").set("Access-Control-Allow-Origin", "*").json(spec);
   });
 
   router.get("/plans", (req, res) => {

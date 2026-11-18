@@ -154,6 +154,20 @@ test("guests behind Cloudflare get their own quota; direct spoofing is ignored",
   assert.equal(await remaining({ headers: { "cf-connecting-ip": "198.51.100.4" } }), direct - 1, "header ignored without Cloudflare");
 });
 
+test("openapi.json documents every active template's params", async () => {
+  const res = await client(ctx.base).get("/api/v1/openapi.json");
+  assert.equal(res.status, 200);
+  const spec = res.data;
+  assert.equal(spec.openapi, "3.1.0");
+  assert.equal(spec.servers[0].url, `${ctx.base}/api/v1`);
+  const variants = spec.paths["/render"].post.requestBody.content["application/json"].schema.oneOf;
+  const templates = (await client(ctx.base).get("/api/v1/templates")).data.data;
+  assert.equal(variants.length, templates.length);
+  const qc = spec.components.schemas.Params_qc;
+  assert.deepEqual(Object.keys(qc.properties).sort(), Object.keys(templates.find((t) => t.slug === "qc").params).sort());
+  assert.equal(spec.components.schemas.Render_qc.properties.template.const, "qc");
+});
+
 test("health check reports ok", async () => {
   const res = await client(ctx.base).get("/healthz");
   assert.equal(res.status, 200);
@@ -422,16 +436,16 @@ describe("free mode (pricing disabled)", () => {
   test("identical requests are served from the cache without using the allowance", async () => {
     const api = client(ctx.base);
     const ip = from("198.51.100.50");
-    const first = await api.post("/api/v1/render", { template: "qc", params: { name: "Cache", message: "hi" } }, ip);
+    const first = await api.post("/api/v1/render", { template: "qc", params: { name: "Cache", msg: "hi" } }, ip);
     assert.equal(first.headers.get("x-cache"), "MISS");
     assert.equal(first.headers.get("x-ratelimit-remaining"), "4");
     // Same params in another key order and via GET: still a hit.
-    const again = await api.get("/api/v1/render?template=qc&message=hi&name=Cache", ip);
+    const again = await api.get("/api/v1/render?template=qc&msg=hi&name=Cache", ip);
     assert.equal(again.headers.get("x-cache"), "HIT");
     assert.equal(again.headers.get("x-ratelimit-remaining"), "4");
     assert.deepEqual(again.data, first.data);
     // Another format or params render again.
-    const jpeg = await api.post("/api/v1/render", { template: "qc", format: "jpeg", params: { name: "Cache", message: "hi" } }, ip);
+    const jpeg = await api.post("/api/v1/render", { template: "qc", format: "jpeg", params: { name: "Cache", msg: "hi" } }, ip);
     assert.equal(jpeg.headers.get("x-cache"), "MISS");
     assert.equal(jpeg.headers.get("x-ratelimit-remaining"), "3");
   });

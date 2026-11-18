@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { ApiPlayground } from "../components/ApiPlayground.jsx";
 import { Badge, Card, CopyButton, PageHeader, cx } from "../components/ui.jsx";
 import { api } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
@@ -20,7 +21,9 @@ function Code({ children }) {
 const SECTIONS = [
   ["auth", "Access & limits"],
   ["render", "Render an image"],
+  ["playground", "Playground"],
   ["templates", "Templates"],
+  ["openapi", "OpenAPI"],
   ["errors", "Errors"],
 ];
 
@@ -83,6 +86,8 @@ const ERRORS = [
   ["413", "image_too_large", "Output would exceed the maximum pixel count."],
   ["422", "validation_error", "Invalid params; `error.details` lists each field."],
   ["429", "rate_limited", "Rate limit reached; wait the number of seconds in Retry-After."],
+  ["503", "busy", "Too many renders queued right now; retry in a moment."],
+  ["504", "render_timeout", "The render took too long (usually a slow remote image)."],
 ];
 
 export default function Docs() {
@@ -121,7 +126,8 @@ export default function Docs() {
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Every render response includes <code>X-RateLimit-Limit</code> and <code>X-RateLimit-Remaining</code>. Over the
               limit you get <code>429 rate_limited</code> with a <code>Retry-After</code> header (seconds). Failed renders and
-              studio previews don't count.
+              studio previews don't count, and repeating an identical request is served from cache (<code>X-Cache: HIT</code>)
+              without using the allowance.
             </p>
             <Code>{`HTTP/1.1 429 Too Many Requests
 Retry-After: 12
@@ -189,7 +195,8 @@ Retry-After: 12
           <code>http(s)</code> URL or a base64 <code>data:image/…</code> URI (PNG, JPEG, GIF, WebP; max 5 MB).
         </p>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Every render response carries an <code>X-Render-Id</code> header, plus{" "}
+          Every render response carries <code>X-Render-Id</code> and <code>X-Cache</code> (<code>HIT</code> when an identical
+          request was served from cache) headers, plus{" "}
           {pricing ? (
             <>
               <code>X-Quota-Limit</code> and <code>X-Quota-Remaining</code>.
@@ -200,6 +207,14 @@ Retry-After: 12
             </>
           )}
         </p>
+      </Section>
+
+      <Section id="playground" title="Playground">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Send real requests from your browser and inspect the status, headers and result.
+          {!pricing && " Playground requests count toward your per-minute limit like any other."}
+        </p>
+        {templates.length > 0 && <ApiPlayground templates={templates} pricing={pricing} />}
       </Section>
 
       <Section id="templates" title="Templates">
@@ -214,6 +229,19 @@ Retry-After: 12
             </Link>
           ))}
         </div>
+      </Section>
+
+      <Section id="openapi" title="OpenAPI">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <Badge>GET</Badge>{" "}
+          <a href="/api/v1/openapi.json" className="font-mono text-violet-600 underline dark:text-violet-400">
+            /api/v1/openapi.json
+          </a>{" "}
+          is an OpenAPI 3.1 description generated from the live templates, with a typed <code>params</code> schema per
+          template. Import it into Postman, Insomnia or Bruno, or generate a client:
+        </p>
+        <Code>{`npx @openapitools/openapi-generator-cli generate \
+  -i ${origin}/api/v1/openapi.json -g typescript-fetch -o ./html-to-img-client`}</Code>
       </Section>
 
       <Section id="errors" title="Errors">
