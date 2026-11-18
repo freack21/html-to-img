@@ -6,7 +6,7 @@ import { useAuth } from "../lib/auth.jsx";
 import { fieldErrors } from "../lib/usePreview.js";
 
 const PERKS = [
-  ["sparkles", "13 ready-made templates, plus your own"],
+  ["sparkles", "18 ready-made templates, plus your own"],
   ["zap", "Fast rendering to PNG, JPEG and SVG"],
   ["key", "API keys and a usage dashboard"],
 ];

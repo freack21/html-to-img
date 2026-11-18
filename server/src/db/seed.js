@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createPlan } from "../services/plans.js";
-import { createTemplate } from "../services/templates.js";
+import { createTemplate, getTemplateBySlug } from "../services/templates.js";
+import { now, transaction } from "./index.js";
 
 const PLANS = [
   {
@@ -42,14 +43,25 @@ const PLANS = [
   },
 ];
 
-/** Inserts default plans and bundled templates into an empty database. */
+/**
+ * Inserts default plans into an empty database, and every bundled template this
+ * database hasn't been offered yet (so new releases ship new templates, while
+ * templates an admin deleted or replaced are left alone).
+ */
 export function seed(db, { templatesDir }) {
   if (!db.prepare("SELECT 1 FROM plans LIMIT 1").get()) {
     for (const plan of PLANS) createPlan(db, plan);
   }
-  if (!db.prepare("SELECT 1 FROM templates LIMIT 1").get()) {
-    for (const file of fs.readdirSync(templatesDir).filter((f) => f.endsWith(".json")).sort()) {
-      createTemplate(db, JSON.parse(fs.readFileSync(path.join(templatesDir, file), "utf8")));
+  const seeded = new Set(db.prepare("SELECT slug FROM seeded_templates").all().map((r) => r.slug));
+  const mark = db.prepare("INSERT INTO seeded_templates (slug, seeded_at) VALUES (?, ?)");
+  const files = fs.readdirSync(templatesDir).filter((f) => f.endsWith(".json")).sort();
+  transaction(db, () => {
+    for (const file of files) {
+      const template = JSON.parse(fs.readFileSync(path.join(templatesDir, file), "utf8"));
+      if (seeded.has(template.slug)) continue;
+      // An admin may already have created a template with this slug: keep theirs.
+      if (!getTemplateBySlug(db, template.slug)) createTemplate(db, template);
+      mark.run(template.slug, now());
     }
-  }
+  });
 }

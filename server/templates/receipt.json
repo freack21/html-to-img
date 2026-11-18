@@ -1,0 +1,638 @@
+{
+  "slug": "receipt",
+  "name": "Receipt",
+  "description": "Shop receipt or simple invoice with up to five line items, tax and total.",
+  "category": "business",
+  "definition": {
+    "width": 720,
+    "params": {
+      "storeName": {
+        "type": "string",
+        "label": "Store name",
+        "default": "Kopi Senja",
+        "maxLength": 40
+      },
+      "storeInfo": {
+        "type": "string",
+        "label": "Address / info",
+        "default": "Jl. Sudirman No. 12, Pekanbaru\n0812-3456-7890",
+        "maxLength": 160,
+        "multiline": true
+      },
+      "logo": {
+        "type": "image",
+        "label": "Logo",
+        "default": ""
+      },
+      "receiptNo": {
+        "type": "string",
+        "label": "Receipt no.",
+        "default": "INV-2026-0042",
+        "maxLength": 30
+      },
+      "date": {
+        "type": "string",
+        "label": "Date",
+        "default": "18 Nov 2026, 14:32",
+        "maxLength": 40
+      },
+      "item1": {
+        "type": "string",
+        "label": "Item 1",
+        "default": "Iced latte",
+        "maxLength": 40
+      },
+      "qty1": {
+        "type": "string",
+        "label": "Qty 1",
+        "default": "2",
+        "maxLength": 6
+      },
+      "price1": {
+        "type": "string",
+        "label": "Amount 1",
+        "default": "56.000",
+        "maxLength": 20
+      },
+      "item2": {
+        "type": "string",
+        "label": "Item 2",
+        "default": "Croissant",
+        "maxLength": 40
+      },
+      "qty2": {
+        "type": "string",
+        "label": "Qty 2",
+        "default": "1",
+        "maxLength": 6
+      },
+      "price2": {
+        "type": "string",
+        "label": "Amount 2",
+        "default": "28.000",
+        "maxLength": 20
+      },
+      "item3": {
+        "type": "string",
+        "label": "Item 3",
+        "default": "Avocado toast",
+        "maxLength": 40
+      },
+      "qty3": {
+        "type": "string",
+        "label": "Qty 3",
+        "default": "1",
+        "maxLength": 6
+      },
+      "price3": {
+        "type": "string",
+        "label": "Amount 3",
+        "default": "45.000",
+        "maxLength": 20
+      },
+      "item4": {
+        "type": "string",
+        "label": "Item 4",
+        "default": "",
+        "maxLength": 40
+      },
+      "qty4": {
+        "type": "string",
+        "label": "Qty 4",
+        "default": "",
+        "maxLength": 6
+      },
+      "price4": {
+        "type": "string",
+        "label": "Amount 4",
+        "default": "",
+        "maxLength": 20
+      },
+      "item5": {
+        "type": "string",
+        "label": "Item 5",
+        "default": "",
+        "maxLength": 40
+      },
+      "qty5": {
+        "type": "string",
+        "label": "Qty 5",
+        "default": "",
+        "maxLength": 6
+      },
+      "price5": {
+        "type": "string",
+        "label": "Amount 5",
+        "default": "",
+        "maxLength": 20
+      },
+      "subtotal": {
+        "type": "string",
+        "label": "Subtotal",
+        "default": "129.000",
+        "maxLength": 20
+      },
+      "tax": {
+        "type": "string",
+        "label": "Tax",
+        "default": "14.190",
+        "maxLength": 20
+      },
+      "total": {
+        "type": "string",
+        "label": "Total",
+        "default": "143.190",
+        "maxLength": 20
+      },
+      "currency": {
+        "type": "string",
+        "label": "Currency",
+        "default": "Rp",
+        "maxLength": 5
+      },
+      "payment": {
+        "type": "string",
+        "label": "Payment method",
+        "default": "QRIS",
+        "maxLength": 30
+      },
+      "footer": {
+        "type": "string",
+        "label": "Footer note",
+        "default": "Thank you, see you again! ☕",
+        "maxLength": 80
+      },
+      "accentColor": {
+        "type": "color",
+        "label": "Accent",
+        "default": "#0f766e"
+      }
+    },
+    "root": {
+      "type": "box",
+      "style": {
+        "width": "100%",
+        "padding": 48,
+        "backgroundColor": "#e4e4e7",
+        "fontFamily": "JetBrains Mono"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "flexDirection": "column",
+            "width": "100%",
+            "padding": "48px 44px",
+            "backgroundColor": "#ffffff",
+            "borderRadius": 20,
+            "color": "#18181b",
+            "fontSize": 24,
+            "lineHeight": 1.5,
+            "boxShadow": "0 12px 30px rgba(0,0,0,0.12)"
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "flexDirection": "column",
+                "alignItems": "center",
+                "textAlign": "center",
+                "gap": 10
+              },
+              "children": [
+                {
+                  "type": "image",
+                  "if": "logo",
+                  "src": "{{logo}}",
+                  "style": {
+                    "width": 88,
+                    "height": 88,
+                    "borderRadius": 20,
+                    "objectFit": "cover"
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "{{storeName}}",
+                  "style": {
+                    "fontFamily": "Figtree",
+                    "fontSize": 40,
+                    "fontWeight": 800,
+                    "color": "{{accentColor}}"
+                  }
+                },
+                {
+                  "type": "text",
+                  "if": "storeInfo",
+                  "text": "{{storeInfo}}",
+                  "style": {
+                    "fontSize": 20,
+                    "color": "#71717a",
+                    "whiteSpace": "pre-wrap"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "style": {
+                "height": 0,
+                "borderTop": "2px dashed #d4d4d8",
+                "margin": "26px 0"
+              }
+            },
+            {
+              "type": "box",
+              "style": {
+                "flexDirection": "column",
+                "gap": 4,
+                "fontSize": 21,
+                "color": "#52525b"
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "No."
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{receiptNo}}"
+                    }
+                  ],
+                  "if": "receiptNo"
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Date"
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{date}}"
+                    }
+                  ],
+                  "if": "date"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "style": {
+                "height": 0,
+                "borderTop": "2px dashed #d4d4d8",
+                "margin": "26px 0"
+              }
+            },
+            {
+              "type": "box",
+              "style": {
+                "flexDirection": "column",
+                "gap": 18
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "if": "item1",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "style": {
+                        "flexDirection": "column",
+                        "flexShrink": 1
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "{{item1}}",
+                          "style": {
+                            "fontWeight": 700
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "if": "qty1",
+                          "text": "x{{qty1}}",
+                          "style": {
+                            "fontSize": 20,
+                            "color": "#71717a"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{currency}} {{price1}}",
+                      "style": {
+                        "flexShrink": 0
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "if": "item2",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "style": {
+                        "flexDirection": "column",
+                        "flexShrink": 1
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "{{item2}}",
+                          "style": {
+                            "fontWeight": 700
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "if": "qty2",
+                          "text": "x{{qty2}}",
+                          "style": {
+                            "fontSize": 20,
+                            "color": "#71717a"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{currency}} {{price2}}",
+                      "style": {
+                        "flexShrink": 0
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "if": "item3",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "style": {
+                        "flexDirection": "column",
+                        "flexShrink": 1
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "{{item3}}",
+                          "style": {
+                            "fontWeight": 700
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "if": "qty3",
+                          "text": "x{{qty3}}",
+                          "style": {
+                            "fontSize": 20,
+                            "color": "#71717a"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{currency}} {{price3}}",
+                      "style": {
+                        "flexShrink": 0
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "if": "item4",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "style": {
+                        "flexDirection": "column",
+                        "flexShrink": 1
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "{{item4}}",
+                          "style": {
+                            "fontWeight": 700
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "if": "qty4",
+                          "text": "x{{qty4}}",
+                          "style": {
+                            "fontSize": 20,
+                            "color": "#71717a"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{currency}} {{price4}}",
+                      "style": {
+                        "flexShrink": 0
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "if": "item5",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "style": {
+                        "flexDirection": "column",
+                        "flexShrink": 1
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "{{item5}}",
+                          "style": {
+                            "fontWeight": 700
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "if": "qty5",
+                          "text": "x{{qty5}}",
+                          "style": {
+                            "fontSize": 20,
+                            "color": "#71717a"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{currency}} {{price5}}",
+                      "style": {
+                        "flexShrink": 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "style": {
+                "height": 0,
+                "borderTop": "2px dashed #d4d4d8",
+                "margin": "26px 0"
+              }
+            },
+            {
+              "type": "box",
+              "style": {
+                "flexDirection": "column",
+                "gap": 6
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24,
+                    "color": "#52525b"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Subtotal"
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{currency}} {{subtotal}}"
+                    }
+                  ],
+                  "if": "subtotal"
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24,
+                    "color": "#52525b"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Tax"
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{currency}} {{tax}}"
+                    }
+                  ],
+                  "if": "tax"
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24,
+                    "fontSize": 32,
+                    "fontWeight": 800,
+                    "marginTop": 10,
+                    "color": "{{accentColor}}"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "TOTAL"
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{currency}} {{total}}"
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "justifyContent": "space-between",
+                    "gap": 24,
+                    "color": "#52525b",
+                    "marginTop": 6
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Paid via"
+                    },
+                    {
+                      "type": "text",
+                      "text": "{{payment}}"
+                    }
+                  ],
+                  "if": "payment"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "style": {
+                "height": 0,
+                "borderTop": "2px dashed #d4d4d8",
+                "margin": "26px 0"
+              }
+            },
+            {
+              "type": "text",
+              "if": "footer",
+              "text": "{{footer}}",
+              "style": {
+                "textAlign": "center",
+                "fontSize": 22,
+                "color": "#52525b",
+                "justifyContent": "center"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

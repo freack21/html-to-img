@@ -129,7 +129,7 @@ A template has metadata (`slug`, `name`, `description`, `category`, `isActive`, 
 - **Styles:** camelCase CSS from the [subset Satori supports](https://github.com/vercel/satori#css): flexbox (no grid), absolute positioning, borders, radii, shadows, gradients and transforms. Nodes default to `box-sizing: border-box`. `url()` is rejected in styles; use an `image` node instead.
 - **Validation:** definitions are validated when saved. Unknown param references, unknown fonts, invalid defaults and trees over 300 nodes are rejected with per-path messages.
 
-Admins create and edit templates live in **Admin → Templates**. The 13 bundled templates in [`server/templates`](server/templates) are only seeded into an empty database.
+Admins create and edit templates live in **Admin → Templates**. The bundled templates in [`server/templates`](server/templates) are added on boot the first time a database sees them (tracked in `seeded_templates`), so new releases ship new templates while ones an admin deleted or replaced stay that way.
 
 ## API
 

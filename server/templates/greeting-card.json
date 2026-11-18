@@ -1,0 +1,119 @@
+{
+  "slug": "greeting-card",
+  "name": "Greeting Card",
+  "description": "Square greeting for birthdays, Eid, New Year, weddings or a thank-you, with an optional photo.",
+  "category": "fun",
+  "definition": {
+    "width": 1080,
+    "height": 1080,
+    "params": {
+      "occasion": { "type": "enum", "label": "Occasion", "options": ["birthday", "eid", "new-year", "wedding", "thanks"], "default": "birthday" },
+      "headline": { "type": "string", "label": "Headline (empty = occasion default)", "default": "", "maxLength": 60, "multiline": true },
+      "to": { "type": "string", "label": "To", "default": "Sarah", "maxLength": 40 },
+      "message": {
+        "type": "string",
+        "label": "Message",
+        "default": "Wishing you a year full of laughter, adventures and everything that makes you smile.",
+        "maxLength": 240,
+        "multiline": true
+      },
+      "from": { "type": "string", "label": "From", "default": "Fikri", "maxLength": 40 },
+      "photo": { "type": "image", "label": "Photo", "default": "" }
+    },
+    "root": {
+      "type": "box",
+      "style": {
+        "position": "relative",
+        "width": "100%",
+        "height": "100%",
+        "padding": 60,
+        "fontFamily": "Poppins",
+        "backgroundImage": {
+          "$switch": "occasion",
+          "cases": {
+            "birthday": "linear-gradient(140deg, #fde68a 0%, #f9a8d4 55%, #c4b5fd 100%)",
+            "eid": "linear-gradient(160deg, #064e3b 0%, #065f46 50%, #047857 100%)",
+            "new-year": "linear-gradient(160deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%)",
+            "wedding": "linear-gradient(160deg, #fff7ed 0%, #fdf2f8 100%)",
+            "thanks": "linear-gradient(140deg, #ccfbf1 0%, #bae6fd 100%)"
+          }
+        }
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "flexDirection": "column",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "width": "100%",
+            "height": "100%",
+            "padding": "60px 80px",
+            "borderRadius": 40,
+            "textAlign": "center",
+            "border": {
+              "$switch": "occasion",
+              "cases": {
+                "birthday": "4px solid rgba(255,255,255,0.8)",
+                "eid": "4px solid #d4af37",
+                "new-year": "4px solid rgba(250,204,21,0.7)",
+                "wedding": "4px solid #d6b48a",
+                "thanks": "4px solid rgba(255,255,255,0.9)"
+              }
+            },
+            "backgroundColor": {
+              "$switch": "occasion",
+              "cases": { "birthday": "rgba(255,255,255,0.35)", "eid": "rgba(0,0,0,0.12)", "new-year": "rgba(255,255,255,0.04)", "wedding": "rgba(255,255,255,0.6)", "thanks": "rgba(255,255,255,0.45)" }
+            },
+            "color": {
+              "$switch": "occasion",
+              "cases": { "birthday": "#3b0764", "eid": "#fef3c7", "new-year": "#fef9c3", "wedding": "#57391f", "thanks": "#134e4a" }
+            }
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": { "$switch": "occasion", "cases": { "birthday": "🎂", "eid": "🌙", "new-year": "🎆", "wedding": "💍", "thanks": "💐" } },
+              "style": { "fontSize": 110, "lineHeight": 1 }
+            },
+            {
+              "type": "image",
+              "if": "photo",
+              "src": "{{photo}}",
+              "style": { "width": 220, "height": 220, "borderRadius": 110, "objectFit": "cover", "marginTop": 30, "border": "8px solid rgba(255,255,255,0.85)" }
+            },
+            {
+              "type": "text",
+              "if": "headline",
+              "text": "{{headline}}",
+              "style": { "fontFamily": "Playfair Display", "fontSize": 84, "fontWeight": 700, "lineHeight": 1.1, "marginTop": 36, "whiteSpace": "pre-wrap" }
+            },
+            {
+              "type": "text",
+              "if": "!headline",
+              "text": {
+                "$switch": "occasion",
+                "cases": {
+                  "birthday": "Happy Birthday",
+                  "eid": "Eid Mubarak",
+                  "new-year": "Happy New Year",
+                  "wedding": "Happy Wedding",
+                  "thanks": "Thank You"
+                }
+              },
+              "style": { "fontFamily": "Playfair Display", "fontSize": 92, "fontWeight": 700, "lineHeight": 1.1, "marginTop": 36 }
+            },
+            { "type": "text", "if": "to", "text": "{{to}}", "style": { "fontFamily": "Playfair Display", "fontStyle": "italic", "fontSize": 60, "marginTop": 12 } },
+            {
+              "type": "text",
+              "if": "message",
+              "text": "{{message}}",
+              "style": { "fontSize": 34, "lineHeight": 1.5, "marginTop": 36, "opacity": 0.85, "maxWidth": 760, "whiteSpace": "pre-wrap" }
+            },
+            { "type": "text", "if": "from", "text": "— {{from}}", "style": { "fontSize": 32, "fontWeight": 600, "marginTop": 36 } }
+          ]
+        }
+      ]
+    }
+  }
+}

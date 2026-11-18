@@ -492,3 +492,20 @@ test("sliding window frees slots exactly one window after they were used", () =>
   first.release();
   assert.equal(window.peek("other", 5).used, 1);
 });
+
+test("seeding adds new bundled templates once and never revives deleted ones", () => {
+  const db = openDatabase(":memory:");
+  const { templatesDir } = loadConfig({});
+  const bundled = fs.readdirSync(templatesDir).filter((f) => f.endsWith(".json")).length;
+  seed(db, { templatesDir });
+  const count = () => db.prepare("SELECT COUNT(*) AS n FROM templates").get().n;
+  assert.equal(count(), bundled);
+  // Simulate an older database: a template was never offered, another was deleted by an admin.
+  db.prepare("DELETE FROM seeded_templates WHERE slug = 'receipt'").run();
+  db.prepare("DELETE FROM templates WHERE slug IN ('receipt', 'meme')").run();
+  seed(db, { templatesDir });
+  assert.ok(getTemplateBySlug(db, "receipt"), "new bundled template is added");
+  assert.equal(getTemplateBySlug(db, "meme"), null, "deleted template stays deleted");
+  seed(db, { templatesDir });
+  assert.equal(count(), bundled - 1);
+});

@@ -1,0 +1,90 @@
+{
+  "slug": "carousel-slide",
+  "name": "Carousel Slide",
+  "description": "1080×1350 educational carousel slide for Instagram and LinkedIn, with numbering and swipe hint.",
+  "category": "social",
+  "definition": {
+    "width": 1080,
+    "height": 1350,
+    "params": {
+      "slide": { "type": "number", "label": "Slide number", "default": 2, "min": 1, "max": 20 },
+      "total": { "type": "number", "label": "Total slides", "default": 5, "min": 1, "max": 20 },
+      "title": { "type": "string", "label": "Title", "default": "Write for one reader", "maxLength": 80, "multiline": true },
+      "body": {
+        "type": "string",
+        "label": "Body",
+        "default": "Picture a single person while you write. Your sentences get shorter, warmer and easier to follow.",
+        "maxLength": 400,
+        "multiline": true
+      },
+      "name": { "type": "string", "label": "Author name", "default": "Fikri Rivandi", "maxLength": 40 },
+      "handle": { "type": "string", "label": "Handle", "default": "@fkrvndii", "maxLength": 30 },
+      "avatar": { "type": "image", "label": "Avatar", "default": "" },
+      "showSwipe": { "type": "boolean", "label": "Show swipe hint", "default": true },
+      "bgColor": { "type": "color", "label": "Background", "default": "#fdf6ec" },
+      "accentColor": { "type": "color", "label": "Accent", "default": "#ea580c" },
+      "textColor": { "type": "color", "label": "Text color", "default": "#1c1917" }
+    },
+    "root": {
+      "type": "box",
+      "style": {
+        "position": "relative",
+        "flexDirection": "column",
+        "justifyContent": "space-between",
+        "width": "100%",
+        "height": "100%",
+        "padding": "90px 96px",
+        "fontFamily": "Figtree",
+        "backgroundColor": "{{bgColor}}",
+        "color": "{{textColor}}"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": { "justifyContent": "space-between", "alignItems": "center" },
+          "children": [
+            {
+              "type": "box",
+              "style": { "alignItems": "center", "gap": 22 },
+              "children": [
+                { "type": "image", "if": "avatar", "src": "{{avatar}}", "style": { "width": 84, "height": 84, "borderRadius": 42, "objectFit": "cover" } },
+                { "type": "box", "if": "!avatar", "style": { "width": 84, "height": 84, "borderRadius": 42, "backgroundColor": "{{accentColor}}" } },
+                {
+                  "type": "box",
+                  "style": { "flexDirection": "column" },
+                  "children": [
+                    { "type": "text", "text": "{{name}}", "style": { "fontSize": 34, "fontWeight": 700 } },
+                    { "type": "text", "if": "handle", "text": "{{handle}}", "style": { "fontSize": 28, "opacity": 0.6 } }
+                  ]
+                }
+              ]
+            },
+            { "type": "text", "text": "{{slide}} / {{total}}", "style": { "fontSize": 30, "fontWeight": 700, "opacity": 0.5 } }
+          ]
+        },
+        {
+          "type": "box",
+          "style": { "flexDirection": "column", "gap": 40 },
+          "children": [
+            { "type": "text", "text": "{{slide}}", "style": { "fontSize": 150, "fontWeight": 900, "lineHeight": 1, "color": "{{accentColor}}", "letterSpacing": -6 } },
+            { "type": "text", "text": "{{title}}", "style": { "fontSize": 84, "fontWeight": 800, "lineHeight": 1.08, "letterSpacing": -2.5, "whiteSpace": "pre-wrap" } },
+            { "type": "box", "style": { "width": 120, "height": 10, "borderRadius": 5, "backgroundColor": "{{accentColor}}" } },
+            { "type": "text", "if": "body", "text": "{{body}}", "style": { "fontSize": 42, "lineHeight": 1.45, "opacity": 0.82, "whiteSpace": "pre-wrap" } }
+          ]
+        },
+        {
+          "type": "box",
+          "style": { "justifyContent": "flex-end", "alignItems": "center", "height": 72 },
+          "children": [
+            {
+              "type": "text",
+              "if": "showSwipe",
+              "text": "Swipe  ›",
+              "style": { "fontSize": 32, "fontWeight": 700, "color": "#ffffff", "backgroundColor": "{{accentColor}}", "padding": "16px 40px", "borderRadius": 999 }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
