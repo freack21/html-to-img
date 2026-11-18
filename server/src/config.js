@@ -2,6 +2,23 @@ import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
+/**
+ * Trims trailing slashes, and drops the port from an https URL on the app's own port:
+ * Coolify's SERVICE_URL_APP_3003 includes ":3003", but the app only speaks plain HTTP
+ * there, so an https URL on that port is always the proxy's public origin.
+ */
+export function normalizePublicUrl(raw, port) {
+  const value = (raw || "").trim().replace(/\/+$/, "");
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:" && url.port === String(port)) url.port = "";
+    return url.toString().replace(/\/+$/, "");
+  } catch {
+    return value;
+  }
+}
+
 export function loadConfig(env = process.env) {
   const dataDir = path.resolve(ROOT, env.DATA_DIR || "data");
   return {
@@ -10,7 +27,7 @@ export function loadConfig(env = process.env) {
     isProduction: env.NODE_ENV === "production",
     // Express "trust proxy" setting; "loopback" fits Nginx on the same host.
     trustProxy: env.TRUST_PROXY || "loopback",
-    publicUrl: (env.PUBLIC_URL || "").replace(/\/+$/, ""),
+    publicUrl: normalizePublicUrl(env.PUBLIC_URL, env.PORT || "3003"),
     databasePath: env.DATABASE_PATH ? path.resolve(ROOT, env.DATABASE_PATH) : path.join(dataDir, "app.db"),
     storageDir: env.STORAGE_DIR ? path.resolve(ROOT, env.STORAGE_DIR) : path.join(dataDir, "storage"),
     webDistDir: path.join(ROOT, "web/dist"),

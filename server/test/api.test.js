@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createApp } from "../src/app.js";
-import { loadConfig } from "../src/config.js";
+import { loadConfig, normalizePublicUrl } from "../src/config.js";
 import { openDatabase } from "../src/db/index.js";
 import { seed } from "../src/db/seed.js";
 import { createRenderer } from "../src/engine/index.js";
@@ -543,4 +543,13 @@ describe("SEO", () => {
     assert.match(injectMeta(html, { origin: "https://img.example", page: null }), /Page not found[\s\S]*noindex/);
     assert.match(injectMeta('<title>a</title>', { origin: "https://x", page: { ...pageFor("/"), title: '<script>"' } }), /&lt;script&gt;&quot;/);
   });
+});
+
+test("PUBLIC_URL drops Coolify's internal port only for https on the app's own port", () => {
+  assert.equal(normalizePublicUrl("https://img.example:3003", "3003"), "https://img.example");
+  assert.equal(normalizePublicUrl("https://img.example:3003/", 3003), "https://img.example");
+  assert.equal(normalizePublicUrl("http://localhost:3003", "3003"), "http://localhost:3003");
+  assert.equal(normalizePublicUrl("https://img.example:8443", "3003"), "https://img.example:8443");
+  assert.equal(normalizePublicUrl("", "3003"), "");
+  assert.equal(loadConfig({ PUBLIC_URL: "https://a.example:3003" }).publicUrl, "https://a.example");
 });

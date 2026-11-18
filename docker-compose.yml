@@ -14,6 +14,7 @@ services:
       - "3003"
     environment:
       SERVICE_URL_APP_3003: /
+      # Includes ":3003"; the app strips it (it never serves https on that port itself).
       PUBLIC_URL: ${SERVICE_URL_APP_3003}
       NODE_ENV: production
       HOST: 0.0.0.0
