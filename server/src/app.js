@@ -7,6 +7,7 @@ import { createSlidingWindow } from "./lib/rate-limit.js";
 import { accountRoutes } from "./routes/account.js";
 import { adminRoutes } from "./routes/admin.js";
 import { renderRoutes, SVG_CSP } from "./routes/render.js";
+import { injectMeta, originOf, pageFor, seoRoutes } from "./routes/seo.js";
 import { createRenderCache } from "./services/render-cache.js";
 
 function securityHeaders(req, res, next) {
@@ -73,11 +74,23 @@ export function createApp(appCtx) {
     (req, res, next) => next(new HttpError(404, "File not found or expired")),
   );
 
-  // Serve the built React app with client-side routing fallback.
-  const indexHtml = path.join(config.webDistDir, "index.html");
-  if (fs.existsSync(indexHtml)) {
+  app.use(seoRoutes(ctx));
+
+  // Serve the built React app with client-side routing fallback. Each page gets its
+  // own title/description/Open Graph tags, and unknown paths answer 404.
+  const indexFile = path.join(config.webDistDir, "index.html");
+  if (fs.existsSync(indexFile)) {
+    const indexHtml = fs.readFileSync(indexFile, "utf8");
+    app.get("/index.html", (req, res) => res.redirect(301, "/"));
     app.use(express.static(config.webDistDir, { index: false, maxAge: "1d" }));
-    app.get("/{*splat}", (req, res) => res.set("Cache-Control", "no-cache").sendFile(indexHtml));
+    app.get("/{*splat}", (req, res) => {
+      const page = pageFor(req.path);
+      res
+        .status(page ? 200 : 404)
+        .set("Cache-Control", "no-cache")
+        .type("html")
+        .send(injectMeta(indexHtml, { origin: originOf(config, req), page }));
+    });
   }
 
   app.use((req, res, next) => next(new HttpError(404, "Route not found")));

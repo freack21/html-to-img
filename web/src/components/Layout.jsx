@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { formatNumber } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
@@ -204,11 +204,29 @@ function Footer() {
  * App shell. `fullBleed` pages (the studio) get the full viewport width and height
  * below the header and no footer.
  */
+// Keep in sync with PAGES in server/src/routes/seo.js (the server sets these on first load).
+const TITLES = {
+  "/": "html-to-img · Images from JSON templates",
+  "/studio": "Studio · html-to-img",
+  "/docs": "API docs · html-to-img",
+  "/pricing": "Pricing · html-to-img",
+  "/login": "Log in · html-to-img",
+  "/register": "Sign up · html-to-img",
+  "/dashboard": "Dashboard · html-to-img",
+};
+
+function useDocumentTitle(pathname) {
+  useEffect(() => {
+    document.title = TITLES[pathname] || (pathname.startsWith("/admin") ? "Admin · html-to-img" : "html-to-img");
+  }, [pathname]);
+}
+
 export default function Layout({ fullBleed = false }) {
   const { user, session, isAdmin, logout, pricing } = useAuth();
   const nav = useNav();
   const navigate = useNavigate();
   const location = useLocation();
+  useDocumentTitle(location.pathname);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const onLogout = async () => {

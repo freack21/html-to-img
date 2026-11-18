@@ -12,6 +12,7 @@ import { cleanupExpired } from "../src/services/renders.js";
 import { updateSettings } from "../src/services/settings.js";
 import { createSlidingWindow } from "../src/lib/rate-limit.js";
 import { createRenderCache } from "../src/services/render-cache.js";
+import { injectMeta, pageFor } from "../src/routes/seo.js";
 import { getTemplateBySlug } from "../src/services/templates.js";
 import { createStorage } from "../src/services/storage.js";
 import { ensureAdmin } from "../src/services/users.js";
@@ -508,4 +509,38 @@ test("seeding adds new bundled templates once and never revives deleted ones", (
   assert.equal(getTemplateBySlug(db, "meme"), null, "deleted template stays deleted");
   seed(db, { templatesDir });
   assert.equal(count(), bundled - 1);
+});
+
+describe("SEO", () => {
+  test("robots.txt and sitemap.xml point at the site's own URLs", async () => {
+    const api = client(ctx.base);
+    const robots = await api.get("/robots.txt");
+    assert.match(robots.data.toString(), /Disallow: \/api\//);
+    assert.match(robots.data.toString(), new RegExp(`Sitemap: ${ctx.base}/sitemap.xml`));
+    const sitemap = (await api.get("/sitemap.xml")).data.toString();
+    assert.match(sitemap, new RegExp(`<loc>${ctx.base}/docs</loc>`));
+    assert.match(sitemap, /studio\?t=og-image/);
+    assert.doesNotMatch(sitemap, /\/login|\/dashboard/);
+  });
+
+  test("og.png is a 1200x630 PNG", async () => {
+    const res = await client(ctx.base).get("/og.png");
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("content-type"), "image/png");
+    assert.equal(res.data.readUInt32BE(16), 1200);
+    assert.equal(res.data.readUInt32BE(20), 630);
+  });
+
+  test("index.html gets per-page meta, and unknown pages are marked noindex", () => {
+    const html = '<html><head><meta name="description" content="old" />\n<title>x</title></head></html>';
+    const docs = injectMeta(html, { origin: "https://img.example", page: pageFor("/docs/") });
+    assert.match(docs, /<title>API docs · html-to-img<\/title>/);
+    assert.match(docs, /<link rel="canonical" href="https:\/\/img.example\/docs" \/>/);
+    assert.match(docs, /<meta property="og:image" content="https:\/\/img.example\/og.png" \/>/);
+    assert.equal((docs.match(/name="description"/g) || []).length, 1);
+    assert.match(injectMeta(html, { origin: "https://img.example", page: pageFor("/admin/users") }), /noindex/);
+    assert.equal(pageFor("/nope"), null);
+    assert.match(injectMeta(html, { origin: "https://img.example", page: null }), /Page not found[\s\S]*noindex/);
+    assert.match(injectMeta('<title>a</title>', { origin: "https://x", page: { ...pageFor("/"), title: '<script>"' } }), /&lt;script&gt;&quot;/);
+  });
 });
