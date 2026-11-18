@@ -62,7 +62,7 @@ function sendImage(res, result, fileName) {
   res.send(result.buffer);
 }
 
-export function renderRoutes({ db, config, renderer, storage, freeLimiter }) {
+export function renderRoutes({ db, config, renderer, storage, freeLimiter, renderCache }) {
   const router = Router();
   const thumbnails = new Map();
 
@@ -87,6 +87,17 @@ export function renderRoutes({ db, config, renderer, storage, freeLimiter }) {
     let usage = null;
     let releaseSlot = null;
 
+    const cacheKey = renderCache.key({
+      slug: template.slug,
+      version: template.version,
+      params: data.params,
+      format: data.format,
+      scale: data.scale,
+      watermark: policy.watermark,
+    });
+    const cached = renderCache.get(cacheKey);
+    res.set("X-Cache", cached ? "HIT" : "MISS");
+
     if (settings.pricingEnabled) {
       assertApiAccess(principal);
       if (template.isPremium && !policy.premiumTemplates) {
@@ -104,32 +115,40 @@ export function renderRoutes({ db, config, renderer, storage, freeLimiter }) {
         throw new HttpError(402, message, { code: "quota_exceeded" });
       }
     } else {
-      // Free mode: no key or account needed, only a per-IP rate limit.
+      // Free mode: no key or account needed, only a per-IP rate limit. Repeating an
+      // identical request is served from the cache and doesn't use up the allowance.
       const limit = settings.freeRendersPerMinute;
-      const slot = freeLimiter.take(client, limit);
       res.set("X-RateLimit-Limit", String(limit));
-      res.set("X-RateLimit-Remaining", String(slot.remaining));
-      if (!slot.allowed) {
-        res.set("Retry-After", String(slot.retryAfter));
-        throw new HttpError(429, `Free limit is ${limit} images per minute per IP. Try again in ${slot.retryAfter}s.`, {
-          code: "rate_limited",
-        });
+      if (cached) {
+        res.set("X-RateLimit-Remaining", String(freeLimiter.peek(client, limit).remaining));
+      } else {
+        const slot = freeLimiter.take(client, limit);
+        res.set("X-RateLimit-Remaining", String(slot.remaining));
+        if (!slot.allowed) {
+          res.set("Retry-After", String(slot.retryAfter));
+          throw new HttpError(429, `Free limit is ${limit} images per minute per IP. Try again in ${slot.retryAfter}s.`, {
+            code: "rate_limited",
+          });
+        }
+        releaseSlot = slot.release;
       }
-      releaseSlot = slot.release;
     }
 
     const started = performance.now();
-    let result;
-    try {
-      result = await renderer(template.definition, data.params, {
-        format: data.format,
-        scale: data.scale,
-        watermark: policy.watermark,
-      });
-    } catch (err) {
-      // Invalid params or unreachable images don't use up the free allowance.
-      releaseSlot?.();
-      throw err;
+    let result = cached;
+    if (!result) {
+      try {
+        result = await renderer(template.definition, data.params, {
+          format: data.format,
+          scale: data.scale,
+          watermark: policy.watermark,
+        });
+      } catch (err) {
+        // Invalid params or unreachable images don't use up the free allowance.
+        releaseSlot?.();
+        throw err;
+      }
+      renderCache.set(cacheKey, result);
     }
     const id = randomId();
     const ext = EXTENSIONS[result.format];
@@ -185,6 +204,7 @@ export function renderRoutes({ db, config, renderer, storage, freeLimiter }) {
     const data = parse(previewSchema, req.body);
     assertApiAccess(req.principal);
     let definition;
+    let template = null;
     let watermark = "PREVIEW";
     if (data.definition !== undefined) {
       if (req.principal?.via !== "session" || req.principal.user.role !== "admin") {
@@ -193,11 +213,18 @@ export function renderRoutes({ db, config, renderer, storage, freeLimiter }) {
       definition = parseDefinition(data.definition);
       watermark = null;
     } else if (data.template) {
-      definition = loadActiveTemplate(data.template).definition;
+      template = loadActiveTemplate(data.template);
+      definition = template.definition;
     } else {
       throw new HttpError(400, "Provide a template slug or a definition");
     }
-    const result = await renderer(definition, data.params, { format: "png", watermark });
+    // Studio previews of published templates repeat a lot (undo, switching back): cache them.
+    const key = template && renderCache.key({ slug: template.slug, version: template.version, params: data.params, format: "preview", scale: 1, watermark });
+    let result = key && renderCache.get(key);
+    if (!result) {
+      result = await renderer(definition, data.params, { format: "png", watermark });
+      if (key) renderCache.set(key, result);
+    }
     res.set("Cache-Control", "no-store");
     sendImage(res, result, "preview.png");
   });

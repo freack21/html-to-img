@@ -3,6 +3,7 @@ import { onlyProvided } from "../lib/patch.js";
 import { definitionSchema, templateMetaSchema } from "./schema.js";
 
 export { createRenderer, FORMATS } from "./render.js";
+export { createRenderPool, defaultPoolSize } from "./pool.js";
 export { FONT_FAMILIES } from "./fonts.js";
 
 /** Validates a template definition and fills in defaults; throws ValidationError. */

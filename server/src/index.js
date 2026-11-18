@@ -2,7 +2,7 @@ import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./db/index.js";
 import { seed } from "./db/seed.js";
-import { createRenderer } from "./engine/index.js";
+import { createRenderer, createRenderPool, defaultPoolSize } from "./engine/index.js";
 import { cleanupExpired } from "./services/renders.js";
 import { ensureAdmin } from "./services/users.js";
 import { createStorage } from "./services/storage.js";
@@ -26,7 +26,13 @@ try {
 }
 
 const storage = createStorage(config.storageDir);
-const renderer = createRenderer({ images: config.images, emojiBaseUrl: config.emojiBaseUrl });
+const rendererOptions = { images: config.images, emojiBaseUrl: config.emojiBaseUrl };
+const workers = config.renderWorkers ?? defaultPoolSize();
+const renderer =
+  workers > 0
+    ? createRenderPool({ size: workers, timeoutMs: config.renderTimeoutMs, renderer: rendererOptions })
+    : createRenderer(rendererOptions);
+console.log(workers > 0 ? `rendering on ${workers} worker thread(s)` : "rendering on the main thread");
 const app = createApp({ db, config, renderer, storage });
 
 const runCleanup = () =>
@@ -47,7 +53,8 @@ server.on("error", (err) => {
 function shutdown(signal) {
   console.log(`${signal} received, shutting down`);
   clearInterval(cleanupTimer);
-  server.close(() => {
+  server.close(async () => {
+    await renderer.close?.();
     db.close();
     process.exit(0);
   });

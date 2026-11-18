@@ -11,6 +11,7 @@ import { createRenderer } from "../src/engine/index.js";
 import { cleanupExpired } from "../src/services/renders.js";
 import { updateSettings } from "../src/services/settings.js";
 import { createSlidingWindow } from "../src/lib/rate-limit.js";
+import { createRenderCache } from "../src/services/render-cache.js";
 import { getTemplateBySlug } from "../src/services/templates.js";
 import { createStorage } from "../src/services/storage.js";
 import { ensureAdmin } from "../src/services/users.js";
@@ -385,16 +386,16 @@ describe("free mode (pricing disabled)", () => {
   test("allows 5 images per minute per IP, then 429 with Retry-After", async () => {
     const api = client(ctx.base);
     for (let i = 1; i <= 5; i++) {
-      const res = await api.get("/api/v1/render?template=qc", from("198.51.100.20"));
+      const res = await api.get(`/api/v1/render?template=qc&name=limit${i}`, from("198.51.100.20"));
       assert.equal(res.status, 200, `render ${i}`);
       assert.equal(res.headers.get("x-ratelimit-remaining"), String(5 - i));
     }
-    const blocked = await api.get("/api/v1/render?template=qc", from("198.51.100.20"));
+    const blocked = await api.get("/api/v1/render?template=qc&name=limit6", from("198.51.100.20"));
     assert.equal(blocked.status, 429);
     assert.equal(blocked.data.error.code, "rate_limited");
     assert.ok(Number(blocked.headers.get("retry-after")) >= 1);
 
-    const other = await api.get("/api/v1/render?template=qc", from("198.51.100.21"));
+    const other = await api.get("/api/v1/render?template=qc&name=limit7", from("198.51.100.21"));
     assert.equal(other.status, 200, "another IP has its own allowance");
 
     const me = await api.get("/api/v1/auth/me", from("198.51.100.20"));
@@ -407,16 +408,54 @@ describe("free mode (pricing disabled)", () => {
     const bad = await api.post("/api/v1/render", { template: "qc", params: { bgColor: "not a color" } }, from("198.51.100.30"));
     assert.equal(bad.status, 422);
     await api.post("/api/v1/preview", { template: "qc" }, from("198.51.100.30"));
-    const ok = await api.get("/api/v1/render?template=qc", from("198.51.100.30"));
+    const ok = await api.get("/api/v1/render?template=qc&name=failed-ok", from("198.51.100.30"));
     assert.equal(ok.headers.get("x-ratelimit-remaining"), "4");
   });
 
   test("concurrent requests cannot exceed the limit", async () => {
     const api = client(ctx.base);
-    const results = await Promise.all(Array.from({ length: 8 }, () => api.get("/api/v1/render?template=qc", from("198.51.100.40"))));
+    const results = await Promise.all(Array.from({ length: 8 }, (_, i) => api.get(`/api/v1/render?template=qc&name=race${i}`, from("198.51.100.40"))));
     assert.equal(results.filter((r) => r.status === 200).length, 5);
     assert.equal(results.filter((r) => r.status === 429).length, 3);
   });
+
+  test("identical requests are served from the cache without using the allowance", async () => {
+    const api = client(ctx.base);
+    const ip = from("198.51.100.50");
+    const first = await api.post("/api/v1/render", { template: "qc", params: { name: "Cache", message: "hi" } }, ip);
+    assert.equal(first.headers.get("x-cache"), "MISS");
+    assert.equal(first.headers.get("x-ratelimit-remaining"), "4");
+    // Same params in another key order and via GET: still a hit.
+    const again = await api.get("/api/v1/render?template=qc&message=hi&name=Cache", ip);
+    assert.equal(again.headers.get("x-cache"), "HIT");
+    assert.equal(again.headers.get("x-ratelimit-remaining"), "4");
+    assert.deepEqual(again.data, first.data);
+    // Another format or params render again.
+    const jpeg = await api.post("/api/v1/render", { template: "qc", format: "jpeg", params: { name: "Cache", message: "hi" } }, ip);
+    assert.equal(jpeg.headers.get("x-cache"), "MISS");
+    assert.equal(jpeg.headers.get("x-ratelimit-remaining"), "3");
+  });
+});
+
+test("render cache evicts least recently used entries and expires old ones", () => {
+  let clock = 0;
+  const cache = createRenderCache({ maxBytes: 10, ttlMs: 100, now: () => clock });
+  const entry = (n) => ({ buffer: Buffer.alloc(n) });
+  cache.set("a", entry(4));
+  cache.set("b", entry(4));
+  assert.ok(cache.get("a"), "touch a so b is the oldest");
+  cache.set("c", entry(4));
+  assert.equal(cache.get("b"), null);
+  assert.ok(cache.get("a") && cache.get("c"));
+  cache.set("huge", entry(11));
+  assert.equal(cache.get("huge"), null, "entries larger than the cache are skipped");
+  clock = 101;
+  assert.equal(cache.get("a"), null);
+  assert.deepEqual(cache.stats(), { entries: 1, bytes: 4 });
+  assert.equal(
+    cache.key({ slug: "qc", version: 1, params: { a: 1, b: 2 }, format: "png", scale: 1 }),
+    cache.key({ slug: "qc", version: 1, params: { b: 2, a: 1 }, format: "png", scale: 1, watermark: null }),
+  );
 });
 
 test("sliding window frees slots exactly one window after they were used", () => {

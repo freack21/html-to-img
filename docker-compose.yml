@@ -21,6 +21,7 @@ services:
       DATA_DIR: /app/data
       # Coolify's Traefik proxy reaches the container over a private Docker network.
       TRUST_PROXY: ${TRUST_PROXY:-loopback, uniquelocal}
+      RENDER_WORKERS: ${RENDER_WORKERS:-}
       MAX_IMAGE_BYTES: ${MAX_IMAGE_BYTES:-5242880}
       IMAGE_TIMEOUT_MS: ${IMAGE_TIMEOUT_MS:-5000}
       EMOJI_BASE_URL: ${EMOJI_BASE_URL:-https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/}

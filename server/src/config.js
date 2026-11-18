@@ -16,6 +16,13 @@ export function loadConfig(env = process.env) {
     webDistDir: path.join(ROOT, "web/dist"),
     templatesDir: path.join(ROOT, "server/templates"),
     emojiBaseUrl: env.EMOJI_BASE_URL ?? "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/",
+    // Render worker threads; 0 renders on the main thread (not recommended in production).
+    renderWorkers: env.RENDER_WORKERS === undefined || env.RENDER_WORKERS === "" ? null : Number(env.RENDER_WORKERS),
+    renderTimeoutMs: Number(env.RENDER_TIMEOUT_MS || 30_000),
+    renderCache: {
+      maxBytes: Number(env.RENDER_CACHE_MB ?? 64) * 1024 * 1024,
+      ttlMs: Number(env.RENDER_CACHE_TTL_SECONDS ?? 600) * 1000,
+    },
     images: {
       maxBytes: Number(env.MAX_IMAGE_BYTES || 5 * 1024 * 1024),
       timeoutMs: Number(env.IMAGE_TIMEOUT_MS || 5000),

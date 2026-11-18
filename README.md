@@ -83,6 +83,9 @@ All settings are optional environment variables, read from `.env` in the repo ro
 | `TRUST_PROXY` | `loopback` | Express `trust proxy` (client IPs for quotas and rate limits) |
 | `DATA_DIR` | `data` | Base directory for `app.db` and `storage/` |
 | `DATABASE_PATH`, `STORAGE_DIR` | under `DATA_DIR` | Override individual paths |
+| `RENDER_WORKERS` | CPU count, max 4 | Worker threads that render images; `0` renders on the main thread |
+| `RENDER_TIMEOUT_MS` | `30000` | A render running longer gets `504 render_timeout` and its worker is restarted |
+| `RENDER_CACHE_MB` / `RENDER_CACHE_TTL_SECONDS` | `64` / `600` | In-memory cache of identical renders (`0` MB disables it) |
 | `MAX_IMAGE_BYTES` | `5242880` | Max size of a remote or uploaded image |
 | `IMAGE_TIMEOUT_MS` | `5000` | Remote image fetch timeout |
 | `ALLOW_PRIVATE_IMAGE_HOSTS` | `false` | Allow image URLs that resolve to private IPs (tests only) |

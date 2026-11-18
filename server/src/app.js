@@ -7,6 +7,7 @@ import { createSlidingWindow } from "./lib/rate-limit.js";
 import { accountRoutes } from "./routes/account.js";
 import { adminRoutes } from "./routes/admin.js";
 import { renderRoutes, SVG_CSP } from "./routes/render.js";
+import { createRenderCache } from "./services/render-cache.js";
 
 function securityHeaders(req, res, next) {
   res.set("X-Content-Type-Options", "nosniff");
@@ -33,11 +34,11 @@ function errorHandler(logger) {
 }
 
 /**
- * @param {{ db, config, renderer, storage, logger?, freeLimiter? }} appCtx
+ * @param {{ db, config, renderer, storage, logger?, freeLimiter?, renderCache? }} appCtx
  */
 export function createApp(appCtx) {
   // One free-render limiter shared by /render (enforces) and /auth/me (reports usage).
-  const ctx = { freeLimiter: createSlidingWindow({ windowMs: 60_000 }), ...appCtx };
+  const ctx = { freeLimiter: createSlidingWindow({ windowMs: 60_000 }), renderCache: createRenderCache(appCtx.config?.renderCache), ...appCtx };
   const { db, config, storage, logger = console } = ctx;
   const app = express();
   app.disable("x-powered-by");
