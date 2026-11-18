@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import ParamForm, { defaultValues } from "../components/ParamForm.jsx";
 import {
@@ -19,6 +19,7 @@ import {
 } from "../components/ui.jsx";
 import { api, apiBlob, formatNumber } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
+import { makeThumbnail, timeAgo, useRecentRenders } from "../lib/history.js";
 import { fieldErrors, usePreview } from "../lib/usePreview.js";
 
 const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -101,10 +102,6 @@ function TemplateBrowser({ templates, selected, onSelect, showPremium }) {
   return (
     <div className="flex h-full flex-col">
       <div className="space-y-3 p-4 pb-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold">Templates</h2>
-          <span className="text-xs text-zinc-400">{templates.length}</span>
-        </div>
         <div className="relative">
           <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
           <input
@@ -142,6 +139,79 @@ function TemplateBrowser({ templates, selected, onSelect, showPremium }) {
         ))}
         {filtered.length === 0 && <p className="col-span-2 py-6 text-center text-sm text-zinc-500">No templates match.</p>}
       </div>
+    </div>
+  );
+}
+
+function RecentRenders({ entries, templates, onRestore, onRemove, onClear }) {
+  if (!entries.length) {
+    return (
+      <div className="px-4 pb-4">
+        <EmptyState
+          icon="history"
+          title="No renders yet"
+          description="Images you download or share appear here, so you can reopen them with the same settings."
+        />
+      </div>
+    );
+  }
+  const names = Object.fromEntries((templates || []).map((t) => [t.slug, t.name]));
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center justify-between px-4 pb-2 text-xs text-zinc-500">
+        <span>Stored in this browser only</span>
+        <button type="button" onClick={onClear} className="rounded px-1 font-medium hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
+          Clear all
+        </button>
+      </div>
+      <ul className="flex gap-2.5 overflow-x-auto px-4 pt-1 pb-4 lg:grid lg:min-h-0 lg:flex-1 lg:auto-rows-max lg:grid-cols-2 lg:content-start lg:overflow-x-visible lg:overflow-y-auto">
+        {entries.map((entry) => {
+          const linkAlive = entry.url && new Date(entry.expiresAt) > new Date();
+          return (
+            <li key={entry.id} className="group relative w-40 shrink-0 lg:w-full">
+              <button
+                type="button"
+                onClick={() => onRestore(entry)}
+                className="flex w-full flex-col rounded-xl bg-white p-1.5 text-left ring-1 ring-zinc-200 transition hover:shadow-md hover:shadow-zinc-900/5 hover:ring-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:ring-zinc-700"
+              >
+                <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-zinc-100 p-2 dark:bg-zinc-800/70">
+                  {entry.thumb ? (
+                    <img src={entry.thumb} alt="" className="max-h-full max-w-full rounded-[3px] object-contain shadow-sm" />
+                  ) : (
+                    <Icon name="image" className="size-6 text-zinc-400" />
+                  )}
+                </div>
+                <span className="truncate px-1 pt-2 text-xs font-medium">{names[entry.slug] || entry.slug}</span>
+                <span className="px-1 pb-0.5 text-[11px] text-zinc-500">
+                  {entry.format.toUpperCase()}
+                  {entry.scale > 1 && ` · ${entry.scale}x`} · {timeAgo(entry.at)}
+                </span>
+              </button>
+              <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+                {linkAlive && (
+                  <a
+                    href={entry.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Open shared link"
+                    className="grid size-6 place-items-center rounded-md bg-white/90 text-zinc-700 shadow ring-1 ring-zinc-200 hover:text-violet-600 dark:bg-zinc-900/90 dark:text-zinc-200 dark:ring-zinc-700"
+                  >
+                    <Icon name="external" className="size-3.5" />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onRemove(entry.id)}
+                  aria-label="Remove from recent renders"
+                  className="grid size-6 place-items-center rounded-md bg-white/90 text-zinc-700 shadow ring-1 ring-zinc-200 hover:text-red-600 dark:bg-zinc-900/90 dark:text-zinc-200 dark:ring-zinc-700"
+                >
+                  <Icon name="x" className="size-3.5" />
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -315,6 +385,11 @@ export default function Studio() {
   const [busy, setBusy] = useState(null);
   const [result, setResult] = useState(null);
   const [actionError, setActionError] = useState(null);
+  const [sidebar, setSidebar] = useState("templates");
+  const recent = useRecentRenders();
+  const addRecent = recent.add;
+  // A recent render waiting for its template to load before its settings are applied.
+  const pendingRestore = useRef(null);
 
   useEffect(() => {
     api("/templates").then(setTemplates).catch(setLoadError);
@@ -323,12 +398,39 @@ export default function Studio() {
   const slug = searchParams.get("t") || templates?.[0]?.slug;
   const template = useMemo(() => templates?.find((t) => t.slug === slug), [templates, slug]);
 
+  const applyEntry = useCallback((tpl, entry) => {
+    // Keep only params the template still has; new ones fall back to their defaults.
+    const saved = Object.fromEntries(Object.entries(entry.params).filter(([k]) => Object.hasOwn(tpl.params, k)));
+    setValues({ ...defaultValues(tpl.params), ...saved });
+    setFormat(entry.format);
+    setScale(entry.scale);
+  }, []);
+
   useEffect(() => {
     if (!template) return;
-    setValues(defaultValues(template.params));
+    const entry = pendingRestore.current;
+    pendingRestore.current = null;
+    if (entry?.slug === template.slug) applyEntry(template, entry);
+    else setValues(defaultValues(template.params));
     setResult(null);
     setActionError(null);
-  }, [template]);
+  }, [template, applyEntry]);
+
+  const restore = (entry) => {
+    const target = templates?.find((t) => t.slug === entry.slug);
+    if (!target) {
+      toast({ title: "Template no longer available", tone: "error" });
+      return;
+    }
+    if (target === template) applyEntry(target, entry);
+    else {
+      pendingRestore.current = entry;
+      setSearchParams({ t: entry.slug });
+    }
+    setPanel("customize");
+    if (entry.droppedUploads) toast({ title: "Settings restored", description: "Uploaded images aren't kept; upload them again." });
+    else toast({ title: "Settings restored" });
+  };
 
   const previewBody = template && Object.keys(values).length ? { template: template.slug, params: values } : null;
   const preview = usePreview(previewBody);
@@ -353,10 +455,20 @@ export default function Studio() {
           const name = `${template.slug}.${format === "jpeg" ? "jpg" : format}`;
           download(blob, name);
           toast({ title: "Image downloaded", description: name });
+          addRecent({ slug: template.slug, params: values, format, scale, thumb: await makeThumbnail(blob) });
         } else {
           const created = await api("/render", { method: "POST", body: { ...body, output: "url" } });
           setResult(created);
           toast({ title: "Shareable link ready", description: `Valid until ${new Date(created.expiresAt).toLocaleString()}` });
+          addRecent({
+            slug: template.slug,
+            params: values,
+            format,
+            scale,
+            url: created.url,
+            expiresAt: created.expiresAt,
+            thumb: await makeThumbnail(created.url),
+          });
         }
       } catch (err) {
         setActionError(err);
@@ -371,7 +483,7 @@ export default function Studio() {
         refresh();
       }
     },
-    [template, values, format, scale, toast, refresh],
+    [template, values, format, scale, toast, refresh, addRecent],
   );
 
   // Cmd/Ctrl + Enter downloads.
@@ -397,7 +509,33 @@ export default function Studio() {
       {/* Templates */}
       <aside aria-label="Templates" className="border-b border-zinc-200 bg-white lg:min-h-0 lg:border-r lg:border-b-0 dark:border-zinc-800 dark:bg-zinc-950">
         {templates ? (
-          <TemplateBrowser templates={templates} selected={slug} onSelect={(s) => setSearchParams({ t: s })} showPremium={pricing} />
+          <div className="flex h-full flex-col">
+            <div className="px-4 pt-4">
+              <SegmentedControl
+                aria-label="Sidebar"
+                value={sidebar}
+                onChange={setSidebar}
+                className="flex w-full [&>button]:flex-1 [&>button]:justify-center [&>button]:py-1.5"
+                options={[
+                  { value: "templates", label: `Templates · ${templates.length}`, icon: "layout" },
+                  { value: "recent", label: `Recent · ${recent.entries.length}`, icon: "history" },
+                ]}
+              />
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col pt-1">
+              {sidebar === "templates" ? (
+                <TemplateBrowser templates={templates} selected={slug} onSelect={(s) => setSearchParams({ t: s })} showPremium={pricing} />
+              ) : (
+                <RecentRenders
+                  entries={recent.entries}
+                  templates={templates}
+                  onRestore={restore}
+                  onRemove={recent.remove}
+                  onClear={recent.clear}
+                />
+              )}
+            </div>
+          </div>
         ) : (
           <div className="space-y-3 p-4">
             <Skeleton className="h-5 w-24" />
