@@ -200,7 +200,7 @@ These are the seeded defaults; all of them are editable in the admin panel. Mont
 
 ## Deployment
 
-- **Docker + Coolify (recommended):** see [docs/deploy-coolify.md](docs/deploy-coolify.md). `deploy/coolify/setup.sh` checks the server, installs Coolify, then creates and deploys the app through the Coolify API.
+- **Docker + Coolify (recommended):** see [docs/deploy-coolify.md](docs/deploy-coolify.md). `deploy/coolify/setup.sh` checks the server, installs Coolify, then creates and deploys the app through the Coolify API. To give another DIGISION project the same setup, hand an agent [docs/coolify-deploy-playbook.md](docs/coolify-deploy-playbook.md).
 - **Bare VPS with PM2 + Nginx:** see [deploy.md](deploy.md).
 
 Any Docker host works too:
