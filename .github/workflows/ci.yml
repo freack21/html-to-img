@@ -46,6 +46,15 @@ jobs:
             echo "::notice::COOLIFY_DEPLOY_WEBHOOK / COOLIFY_TOKEN secrets are not set; skipping deploy."
             exit 0
           fi
-          curl --fail-with-body --silent --show-error --max-time 30 --request POST \
+          status=$(curl --silent --show-error --max-time 30 --request POST \
             --header "Authorization: Bearer $COOLIFY_TOKEN" \
-            "$COOLIFY_DEPLOY_WEBHOOK"
+            --output response.json --write-out '%{http_code}' \
+            "$COOLIFY_DEPLOY_WEBHOOK") || { echo "::error::Could not reach Coolify. Check the host in COOLIFY_DEPLOY_WEBHOOK."; exit 1; }
+          cat response.json; echo
+          case "$status" in
+            2??) ;;
+            401) echo "::error::Coolify rejected COOLIFY_TOKEN (401). Create a new token with the deploy permission and update the secret."; exit 1 ;;
+            403) echo "::error::Coolify refused the request (403). Enable API access and check Allowed IPs in Settings > Advanced; the token needs the deploy permission."; exit 1 ;;
+            404) echo "::error::Coolify has no application with the uuid in COOLIFY_DEPLOY_WEBHOOK (404). If the app was re-created or moved, copy the new Deploy Webhook from the application's Webhooks page into the secret."; exit 1 ;;
+            *) echo "::error::Coolify answered HTTP $status."; exit 1 ;;
+          esac
