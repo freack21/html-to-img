@@ -292,3 +292,26 @@ test("image loader serves rotated JPEG data URIs upright", async () => {
   const out = Buffer.from(uri.split(",")[1], "base64");
   assert.equal(colorAt(out, 0, 0).width, 48);
 });
+
+test("trim crops the empty canvas around the content", async () => {
+  const render = createRenderer({ emojiBaseUrl: "" });
+  const def = (trim) =>
+    parseDefinition({
+      width: 400,
+      height: 200,
+      ...(trim !== undefined && { trim }),
+      root: { type: "box", style: { width: "100%", height: "100%" }, children: [{ type: "box", style: { width: 100, height: 50, marginLeft: 20, marginTop: 30, backgroundColor: "#f00" } }] },
+    });
+  const size = (r) => [r.width, r.height];
+  assert.deepEqual(size(await render(def(), {})), [400, 200], "no trim keeps the canvas");
+  assert.deepEqual(size(await render(def(true), {})), [100, 50]);
+  assert.deepEqual(size(await render(def(0), {})), [100, 50], "trim: 0 still trims");
+  assert.deepEqual(size(await render(def(8), {})), [116, 66]);
+  assert.deepEqual(size(await render(def(8), {}, { scale: 2 })), [232, 132]);
+  assert.deepEqual(size(await render(def(100), {})), [220, 180], "margin is clamped to the canvas");
+  const svg = await render(def(8), {}, { format: "svg" });
+  assert.deepEqual(size(svg), [116, 66]);
+  assert.match(svg.buffer.toString(), /^<svg width="116" height="66" viewBox="12 22 116 66"/);
+  assert.deepEqual(size(await render(def(8), {}, { watermark: "PREVIEW" })).map((n) => n > 0), [true, true]);
+  assert.throws(() => def(-1), /Invalid template definition/);
+});

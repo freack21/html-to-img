@@ -5,6 +5,7 @@
   "category": "chat",
   "definition": {
     "width": 420,
+    "trim": 8,
     "params": {
       "name": { "type": "string", "label": "Name", "default": "Your Name", "maxLength": 60 },
       "msg": { "type": "string", "label": "Message", "default": "Hello, this is a quick chat", "maxLength": 500, "multiline": true },

@@ -7,6 +7,8 @@ import { FONT_FAMILIES, isKnownFamily } from "./fonts.js";
  * {
  *   "width": 600,                 // canvas width in px
  *   "height": 400,                // optional; omitted = fit content
+ *   "trim": 8,                    // optional; crop empty (transparent) space around the
+ *                                 // content, keeping this many px of margin (true = 0)
  *   "params": { "<name>": ParamSpec },
  *   "root": Node
  * }
@@ -81,6 +83,7 @@ export const definitionSchema = z
   .object({
     width: z.number().int().min(16).max(2400),
     height: z.number().int().min(16).max(2400).optional(),
+    trim: z.union([z.boolean(), z.number().int().min(0).max(200)]).optional(),
     params: z.record(paramName, paramSchema).default({}),
     root: nodeSchema,
   })

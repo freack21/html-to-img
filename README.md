@@ -123,6 +123,7 @@ A template has metadata (`slug`, `name`, `description`, `category`, `isActive`, 
 }
 ```
 
+- **Size:** `width` is required; omit `height` to fit the content. `"trim": true` (or a number of px to keep as margin) crops the empty, transparent space around the content, so a chat bubble shorter than the canvas comes out as wide as the bubble. Chat apps show transparent areas as black when an image isn't sent as a sticker.
 - **Nodes:** `box` (a flex container with `children`), `text` (`text`) and `image` (`src`). Any node can take an `if` condition: `"param"`, `"!param"`, `"param == value"` or `"param != value"`.
 - **Values:** `{{param}}` placeholders work in text and style strings. A lone placeholder such as `"{{fontSize}}"` keeps its type. `{ "$switch": "param", "cases": {…}, "default": … }` picks a value per param.
 - **Param types:** `string` (`maxLength`, `multiline`), `number` (`min`, `max`), `color` (hex, `rgb()`, `hsl()` or named), `boolean`, `enum` (`options`), and `image` (an http(s) URL or a base64 data URI; PNG, JPEG, GIF or WebP).
